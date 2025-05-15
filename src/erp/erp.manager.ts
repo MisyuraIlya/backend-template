@@ -105,6 +105,10 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         return this.erp.SendOrder(history) ?? '';
     }
 
+    public FindUser({ userExtId, phone }: { userExtId: string; phone: string; }): Promise<UserDto> {
+        return this.erp.FindUser({ userExtId, phone });
+    }
+
     public async GetDocuments(
         dateFrom: Date, 
         dateTo: Date, 

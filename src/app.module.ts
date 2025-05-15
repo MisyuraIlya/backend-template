@@ -56,6 +56,7 @@ import { ErpManager } from './erp/erp.manager';
 import { GetUsersService } from './cron/GetUsers';
 import { AdminModule } from './modules/admin/admin.module';
 import { CronModule } from './cron/cron.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -143,7 +144,8 @@ import { CronModule } from './cron/cron.module';
     ProductAttributeModule,
     ProductImagesModule,
     AdminModule,
-    CronModule
+    CronModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [

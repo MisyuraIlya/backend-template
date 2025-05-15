@@ -114,118 +114,178 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         return result;
     }
 
-  async GetProducts(pageSize?: number, skip?: number): Promise<ProductDto[]> {
-      const endpoint = "/LOGPART";
-      const params: Record<string, any> = {};
+    async GetProducts(pageSize?: number, skip?: number): Promise<ProductDto[]> {
+        const endpoint = "/LOGPART";
+        const params: Record<string, any> = {};
 
-      if (pageSize != null) {
-        params['$top'] = pageSize;
-        params['$skip'] = skip ?? 0;
-      }
+        if (pageSize != null) {
+          params['$top'] = pageSize;
+          params['$skip'] = skip ?? 0;
+        }
 
-      const qs = new URLSearchParams(params).toString();
-      const url = `${endpoint}?${qs}`;
+        const qs = new URLSearchParams(params).toString();
+        const url = `${endpoint}?${qs}`;
 
-      try {
-        const raw = await this.GetRequest(url);
-        console.log('raw',raw.length)
-        return raw
-          .map((r: any) => {
-            const dto: ProductDto = {
-              sku: r.PARTNAME,
-              title: r.PARTDES,
-              barcode: r.BARCODE,
-              packQuantity: r.CONV,
-              categoryLvl1Id: r.SPEC14,
-              categoryLvl1Name: r.SPEC14,
-              categoryLvl2Id: r.FBAO_PARAMETERCODEA,
-              categoryLvl2Name: r.FBAO_PARAMETERCODEA,
-              categoryLvl3Id: r.FBAO_FAMILYCODE,
-              categoryLvl3Name: r.FBAO_FAMILYCODE,
-              status: r.STATDES === 'פעיל',
-              baseprice: r.BASEPLPRICE,
-              minimumPrice: r.MINPRICE,
-              Extra2: r.SPEC2,
-              Extra3: r.SPEC3,
-              Extra4: r.SPEC4,
-              Extra5: r.SPEC5,
-              Extra6: r.SPEC6,
-              Extra7: r.SPEC7,
-              Extra8: r.SPEC8,
-              Extra10: r.FBAO_PARAMETERCODEA,
-              Extra11: r.FBAO_PARAMETERCODEA,
-              Extra12: r.FBAO_PARAMETERCODEB,
-              Extra13: r.FBAO_PARAMETERCODEB,
-              Extra14: r.FBAO_PARAMETERCODEC,
-              Extra15: r.FBAO_PARAMETERCODEC,
-              Extra16: r.FBAO_PARAMETERCODED,
-              Extra17: r.FBAO_PARAMETERCODED,
-              Extra18: r.FBAO_PARAMETERCODEE,
-              Extra19: r.FBAO_PARAMETERCODEE,
-              Extra20: r.FBAO_PARAMETERCODEF,
-              Extra21: r.FBAO_PARAMETERCODEF,
-              Extra22: r.FBAO_PARAMETERCODEG,
-              Extra23: r.FBAO_PARAMETERCODEG,
-              intevntory_managed: true,
-            };
-            return (
-              dto.categoryLvl1Id && dto.categoryLvl1Name &&
-              dto.categoryLvl2Id && dto.categoryLvl2Name &&
-              dto.categoryLvl3Id && dto.categoryLvl3Name
-            ) ? dto : null;
-          })
-          
-      } catch(e) {
-        console.log('[ERROR]', e)
-        throw new Error('Failed to fetch products');
-      }
-  }
+        try {
+          const raw = await this.GetRequest(url);
+          console.log('raw',raw.length)
+          return raw
+            .map((r: any) => {
+              const dto: ProductDto = {
+                sku: r.PARTNAME,
+                title: r.PARTDES,
+                barcode: r.BARCODE,
+                packQuantity: r.CONV,
+                categoryLvl1Id: r.SPEC14,
+                categoryLvl1Name: r.SPEC14,
+                categoryLvl2Id: r.FBAO_PARAMETERCODEA,
+                categoryLvl2Name: r.FBAO_PARAMETERCODEA,
+                categoryLvl3Id: r.FBAO_FAMILYCODE,
+                categoryLvl3Name: r.FBAO_FAMILYCODE,
+                status: r.STATDES === 'פעיל',
+                baseprice: r.BASEPLPRICE,
+                minimumPrice: r.MINPRICE,
+                Extra2: r.SPEC2,
+                Extra3: r.SPEC3,
+                Extra4: r.SPEC4,
+                Extra5: r.SPEC5,
+                Extra6: r.SPEC6,
+                Extra7: r.SPEC7,
+                Extra8: r.SPEC8,
+                Extra10: r.FBAO_PARAMETERCODEA,
+                Extra11: r.FBAO_PARAMETERCODEA,
+                Extra12: r.FBAO_PARAMETERCODEB,
+                Extra13: r.FBAO_PARAMETERCODEB,
+                Extra14: r.FBAO_PARAMETERCODEC,
+                Extra15: r.FBAO_PARAMETERCODEC,
+                Extra16: r.FBAO_PARAMETERCODED,
+                Extra17: r.FBAO_PARAMETERCODED,
+                Extra18: r.FBAO_PARAMETERCODEE,
+                Extra19: r.FBAO_PARAMETERCODEE,
+                Extra20: r.FBAO_PARAMETERCODEF,
+                Extra21: r.FBAO_PARAMETERCODEF,
+                Extra22: r.FBAO_PARAMETERCODEG,
+                Extra23: r.FBAO_PARAMETERCODEG,
+                intevntory_managed: true,
+              };
+              return (
+                dto.categoryLvl1Id && dto.categoryLvl1Name &&
+                dto.categoryLvl2Id && dto.categoryLvl2Name &&
+                dto.categoryLvl3Id && dto.categoryLvl3Name
+              ) ? dto : null;
+            })
+            
+        } catch(e) {
+          console.log('[ERROR]', e)
+          throw new Error('Failed to fetch products');
+        }
+    }
       
 
-  async GetUsers(): Promise<UserDto[]> {
-    const endpoint = "/CUSTOMERS";
-    const queryExtras = {
-      '$expand': "CUSTPERSONNEL_SUBFORM",
-    };
-    const urlQuery = `${endpoint}?${new URLSearchParams(queryExtras).toString()}`;
+    async GetUsers(): Promise<UserDto[]> {
+      const endpoint = "/CUSTOMERS";
+      const queryExtras = {
+        '$expand': "CUSTPERSONNEL_SUBFORM",
+      };
+      const urlQuery = `${endpoint}?${new URLSearchParams(queryExtras).toString()}`;
 
-    try {
-      const response = await this.GetRequest(urlQuery);
+      try {
+        const response = await this.GetRequest(urlQuery);
 
-      const users: UserDto[] = response.map((userRec: any) => {
-        // Base user object
-        const userDto: UserDto = {
-          userExId:        userRec.CUSTNAME,
-          userDescription: userRec.CUSTDES,
-          name:            userRec.CUSTDES,
-          phone:       userRec.PHONE,
-          isBlocked:       userRec.INACTIVEFLAG === 'Y',
-          address:         userRec.ADDRESS,
-          town:            userRec.STATE,
-          payCode:         userRec.PAYCODE,
-          payDes:          userRec.PAYDES,
-          maxCredit:       Number(userRec.MAX_CREDIT),
-          maxObligo:       Number(userRec.MAX_OBLIGO),
-          hp:              userRec.WTAXNUM,
-          taxCode:         userRec.TAXCODE,
-          agentCode:       userRec.AGENTCODE,
-
-          // These three were missing before:
-          globalDiscount:  Number(userRec.GLOBAL_DISCOUNT ?? 0),
-          isVatEnabled:    userRec.VATFLAG === 'Y',
-          salesCurrency:   userRec.SALESCURRENCY ?? '',
-
-          // initialize, then fill below
-          subUsers:        []
-        };
-
-        // Expand sub‐users if present
-        if (Array.isArray(userRec.CUSTPERSONNEL_SUBFORM)) {
-          userDto.subUsers = userRec.CUSTPERSONNEL_SUBFORM.map((subRec: any) => ({
+        const users: UserDto[] = response.map((userRec: any) => {
+          const userDto: UserDto = {
             userExId:        userRec.CUSTNAME,
             userDescription: userRec.CUSTDES,
-            name:            subRec.NAME,
-            telephone:       subRec.CELLPHONE,
+            name:            userRec.CUSTDES,
+            phone:       userRec.PHONE,
+            isBlocked:       userRec.INACTIVEFLAG === 'Y',
+            address:         userRec.ADDRESS,
+            town:            userRec.STATE,
+            payCode:         userRec.PAYCODE,
+            payDes:          userRec.PAYDES,
+            maxCredit:       Number(userRec.MAX_CREDIT),
+            maxObligo:       Number(userRec.MAX_OBLIGO),
+            hp:              userRec.WTAXNUM,
+            taxCode:         userRec.TAXCODE,
+            agentCode:       userRec.AGENTCODE,
+
+            // These three were missing before:
+            globalDiscount:  Number(userRec.GLOBAL_DISCOUNT ?? 0),
+            isVatEnabled:    userRec.VATFLAG === 'Y',
+            salesCurrency:   userRec.SALESCURRENCY ?? '',
+
+            // initialize, then fill below
+            subUsers:        []
+          };
+
+          // Expand sub‐users if present
+          if (Array.isArray(userRec.CUSTPERSONNEL_SUBFORM)) {
+            userDto.subUsers = userRec.CUSTPERSONNEL_SUBFORM.map((subRec: any) => ({
+              userExId:        userRec.CUSTNAME,
+              userDescription: userRec.CUSTDES,
+              name:            subRec.NAME,
+              telephone:       subRec.CELLPHONE,
+              isBlocked:       userRec.INACTIVEFLAG === 'Y',
+              address:         userRec.ADDRESS,
+              town:            userRec.STATE,
+              payCode:         userRec.PAYCODE,
+              payDes:          userRec.PAYDES,
+              maxCredit:       Number(userRec.MAX_CREDIT),
+              maxObligo:       Number(userRec.MAX_OBLIGO),
+              hp:              userRec.WTAXNUM,
+              taxCode:         userRec.TAXCODE,
+              agentCode:       userRec.AGENTCODE,
+              globalDiscount:  Number(userRec.GLOBAL_DISCOUNT ?? 0),
+              isVatEnabled:    userRec.VATFLAG === 'Y',
+              salesCurrency:   userRec.SALESCURRENCY ?? '',
+              subUsers:        []
+            }));
+          }
+
+          return userDto;
+        });
+
+        return users;
+
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        throw new Error('Failed to fetch users');
+      }
+    }
+
+    async FindUser({
+      userExtId,
+      phone
+    }: {
+      userExtId: string;
+      phone?: string;
+    }): Promise<UserDto> {
+        const endpoint = "/CUSTOMERS";
+        // build filter string
+        const filters = [`CUSTNAME eq '${userExtId}'`];
+        if (phone) {
+          filters.push(`PHONE eq '${phone}'`);
+        }
+      
+        const queryExtras = {
+          '$expand': "CUSTPERSONNEL_SUBFORM",
+          '$filter': filters.join(' and ')
+        };
+        const urlQuery = `${endpoint}?${new URLSearchParams(queryExtras).toString()}`;
+      
+        try {
+          const response = await this.GetRequest(urlQuery);
+      
+          if (!Array.isArray(response) || response.length === 0) {
+            throw new Error(`No user found for CUSTNAME='${userExtId}'${phone ? ` and PHONE='${phone}'` : ''}`);
+          }
+      
+          const userRec = response[0];
+          const userDto: UserDto = {
+            userExId:        userRec.CUSTNAME,
+            userDescription: userRec.CUSTDES,
+            name:            userRec.CUSTDES,
+            phone:           userRec.PHONE,
             isBlocked:       userRec.INACTIVEFLAG === 'Y',
             address:         userRec.ADDRESS,
             town:            userRec.STATE,
@@ -240,19 +300,39 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             isVatEnabled:    userRec.VATFLAG === 'Y',
             salesCurrency:   userRec.SALESCURRENCY ?? '',
             subUsers:        []
-          }));
+          };
+      
+          if (Array.isArray(userRec.CUSTPERSONNEL_SUBFORM)) {
+            userDto.subUsers = userRec.CUSTPERSONNEL_SUBFORM.map((subRec: any) => ({
+              userExId:        userRec.CUSTNAME,
+              userDescription: userRec.CUSTDES,
+              name:            subRec.NAME,
+              phone:           subRec.CELLPHONE,
+              isBlocked:       userRec.INACTIVEFLAG === 'Y',
+              address:         userRec.ADDRESS,
+              town:            userRec.STATE,
+              payCode:         userRec.PAYCODE,
+              payDes:          userRec.PAYDES,
+              maxCredit:       Number(userRec.MAX_CREDIT),
+              maxObligo:       Number(userRec.MAX_OBLIGO),
+              hp:              userRec.WTAXNUM,
+              taxCode:         userRec.TAXCODE,
+              agentCode:       userRec.AGENTCODE,
+              globalDiscount:  Number(userRec.GLOBAL_DISCOUNT ?? 0),
+              isVatEnabled:    userRec.VATFLAG === 'Y',
+              salesCurrency:   userRec.SALESCURRENCY ?? '',
+              subUsers:        []
+            }));
+          }
+      
+          return userDto;
+      
+        } catch (error) {
+          console.error('Error finding user:', error);
+          throw new Error('Failed to find user');
         }
-
-        return userDto;
-      });
-
-      return users;
-
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw new Error('Failed to fetch users');
     }
-  }
+
 
 
     async GetVariety(): Promise<string[]> {

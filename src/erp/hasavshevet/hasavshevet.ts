@@ -202,6 +202,11 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         }
     }
 
+    // @ts-ignore
+    async FindUser({ userExtId, phone }: { userExtId: string; phone: string; }): Promise<UserDto> {
+      
+    }
+
     async GetVariety(): Promise<string[]> {
         // Implement the logic here
         return []

@@ -15,12 +15,16 @@ export class User {
   id: number;
 
   @Column({ unique: true, nullable: true })
-  @IsEmail()
   @IsOptional()
-  email: string;
+  username: string;
 
   @Column({ nullable: true })
   password: string;
+
+  @Column({ unique: true, nullable: true })
+  @IsEmail()
+  @IsOptional()
+  email: string;
 
   @Column()
   isRegistered: boolean;
@@ -44,7 +48,7 @@ export class User {
   updatedAt: Date;
 
   @Column({ nullable: true })
-  recovery: string;
+  recovery: number;
 
   @OneToMany(() => History, (history) => history.user)
   histories: History[];
@@ -67,9 +71,6 @@ export class User {
     nullable: true,
   })
   role: UsersTypes; 
-
-  @Column({ nullable: true })
-  passwordUnencrypted: string;
 
   @Column({ default: false })
   isAllowOrder: boolean;
@@ -110,7 +111,7 @@ export class User {
   @OneToMany(() => User, (user) => user.agent)
   usersAgent: User[];
 
-  @Column()
+  @Column({default:false})
   isAgent: boolean;
 
   @OneToMany(() => NotificationUser, (notificationUser) => notificationUser.user)

@@ -20,6 +20,7 @@ import { CoreInterface } from "../interfaces/core.interface";
 import { CronInterface } from "../interfaces/cron.interface";
 import { OnlineInterface } from "../interfaces/online.interface";
 import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
+import { User } from "src/modules/user/entities/user.entity";
 
 
 export class Sap implements CoreInterface, CronInterface, OnlineInterface {
@@ -127,6 +128,11 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
         address: item.Address,
         isBlocked: item.Frozen === 'tYES'
       }));
+    }
+
+    // @ts-ignore
+    async FindUser({ userExtId, phone }: { userExtId: string; phone: string; }): Promise<UserDto> {
+      
     }
   
     async GetPriceList(): Promise<PriceListDto[]> {

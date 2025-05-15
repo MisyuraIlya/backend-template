@@ -8,10 +8,14 @@ import { PurchaseHistoryItem } from "../dto/purchaseHistoryItem.dto";
 import { SalesKeeperAlertDto } from "../dto/salesKeeperAlert.dto";
 import { SalesQuantityKeeperAlertLineDto } from "../dto/salesQuantityKeeperAlert.dto";
 import { StockDto } from "../dto/stock.do";
+import { UserDto } from "../dto/user.dto";
 import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
 
 export interface OnlineInterface {
     SendOrder(history: any): Promise<string>;
+
+    FindUser({userExtId,phone}: {userExtId: string, phone:string}): Promise<UserDto>
+
     GetDocuments(
       dateFrom: Date, 
       dateTo: Date, 

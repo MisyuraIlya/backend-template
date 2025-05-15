@@ -30,7 +30,7 @@ export class InitializationService {
 
       admin = this.userRepository.create({
         name: 'admin',
-        email: 'admin@gmail.com',
+        username: 'admin@gmail.com',
         phone: '',
         extId: adminExtId,
         isRegistered: true,
@@ -40,8 +40,7 @@ export class InitializationService {
         isVatEnabled: true,
         isAllowOrder: false,
         isAllowAllClients: false,
-        recovery: Math.floor(100000 + Math.random() * 900000).toString(),
-        passwordUnencrypted: passwordPlain,
+        recovery: Math.floor(100000 + Math.random() * 900000),
         password: hashed,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -69,8 +68,7 @@ export class InitializationService {
         isVatEnabled: true,
         isAllowOrder: false,
         isAllowAllClients: false,
-        recovery: Math.floor(100000 + Math.random() * 900000).toString(),
-        passwordUnencrypted: passwordPlain,
+        recovery: Math.floor(100000 + Math.random() * 900000),
         password: hashed,
         createdAt: new Date(),
         updatedAt: new Date(),
