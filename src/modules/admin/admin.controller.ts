@@ -30,6 +30,9 @@ export class AdminController {
   @Get('sync-all')
   async triggerAll() {
     console.log('SYNCING');
+    console.log('Initialization');
+    await this.initialization.handleCron();
+    console.log('Syncing users');
     await this.getUsers.handleCron();
     console.log('Syncing agents');
     await this.getAgents.handleCron();
@@ -43,12 +46,12 @@ export class AdminController {
     await this.getAttributeSub.handleCron();
     console.log('Syncing sub-attributes');
     await this.getAttributeSub.handleCron();
-    // console.log('Syncing price lists');
-    // await this.getPriceList.handleCron();
-    // console.log('Syncing detailed price lists');
-    // await this.getPriceListDetailed.handleCron();
-    // console.log('Syncing user price lists');
-    // await this.getPriceListUser.handleCron();
+    console.log('Syncing price lists');
+    await this.getPriceList.handleCron();
+    console.log('Syncing detailed price lists');
+    await this.getPriceListDetailed.handleCron();
+    console.log('Syncing user price lists');
+    await this.getPriceListUser.handleCron();
     return { status: 'ok', message: 'Agent sync complete' };
   }
 

@@ -14,7 +14,7 @@ import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
 export interface OnlineInterface {
     SendOrder(history: any): Promise<string>;
 
-    FindUser({userExtId,phone}: {userExtId: string, phone:string}): Promise<UserDto>
+    FindUser({userExtId,phone}: {userExtId: string, phone:string}): Promise<UserDto | null>
 
     GetDocuments(
       dateFrom: Date, 

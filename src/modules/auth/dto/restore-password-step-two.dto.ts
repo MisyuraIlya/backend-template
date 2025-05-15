@@ -1,5 +1,5 @@
 export class RestorePasswordStepTwoDto {
-    email: string;
+    username: string;
     token: string;
     password: string;
 }

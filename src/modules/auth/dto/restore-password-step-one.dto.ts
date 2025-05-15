@@ -1,3 +1,3 @@
 export class RestorePasswordStepOneDto {
-    email: string;
+    username: string;
 }

@@ -11,4 +11,14 @@ export class CategoryService extends TypeOrmCrudService<Category>  {
   ) {
     super(repo);
   }
+
+  async getCategoriesApp(): Promise<Category[]> {
+    return this.repo.find({
+      where: { lvlNumber: 1 },
+      relations: [
+        'categories',              
+        'categories.categories',  
+      ],
+    });
+  }
 }

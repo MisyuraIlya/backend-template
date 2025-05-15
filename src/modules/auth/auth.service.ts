@@ -62,7 +62,7 @@ export class AuthService {
     this.ensureRegistrable(user, +dto.token);
 
     user.isRegistered = true;
-    user.email = dto.username;
+    user.username = dto.username;
     user.password = await this.hashPassword(dto.password); 
     user.recovery = this.generateRecoveryCode(6);
     user.updatedAt = new Date();
@@ -72,20 +72,19 @@ export class AuthService {
   }
 
   async restorePasswordStepOne(dto: RestorePasswordStepOneDto) {
-    const user = await this.getByEmail(dto.email);
+    const user = await this.getByUsername(dto.username);
     this.ensureNotBlocked(user);
 
     user.recovery = this.generateRecoveryCode(5);
     user.updatedAt = new Date();
     await this.userRepo.save(user);
 
-    return { success: true, message: 'נשלח קוד סודי לאימות' };
+    return { username:user?.username ,message: 'נשלח קוד סודי לאימות' };
   }
 
   async restorePasswordStepTwo(dto: RestorePasswordStepTwoDto) {
-    const user = await this.getByEmail(dto.email);
+    const user = await this.getByUsername(dto.username);
     this.ensureNotBlocked(user);
-
     if (user.recovery.toString() !== dto.token) {
       throw new HttpException('קוד סודי אינו תקין', HttpStatus.BAD_REQUEST);
     }
@@ -94,7 +93,7 @@ export class AuthService {
     user.updatedAt = new Date();
     await this.userRepo.save(user);
 
-    return { success: true, message: 'סיסמא שונתה בהצלחה' };
+    return { message: 'נשלח קוד סודי לאימות' };
   }
 
   async createUser(dto: CreateUserDto) {
@@ -180,8 +179,8 @@ export class AuthService {
     return user;
   }
 
-  private async getByEmail(email: string): Promise<User> {
-    const user = await this.userRepo.findOneBy({ email });
+  private async getByUsername(username: string): Promise<User> {
+    const user = await this.userRepo.findOneBy({ username });
     if (!user) {
       throw new HttpException('לא נמצא לקוח', HttpStatus.BAD_REQUEST);
     }

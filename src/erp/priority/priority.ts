@@ -259,9 +259,8 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
     }: {
       userExtId: string;
       phone?: string;
-    }): Promise<UserDto> {
+    }): Promise<UserDto | null> {
         const endpoint = "/CUSTOMERS";
-        // build filter string
         const filters = [`CUSTNAME eq '${userExtId}'`];
         if (phone) {
           filters.push(`PHONE eq '${phone}'`);
@@ -277,7 +276,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
           const response = await this.GetRequest(urlQuery);
       
           if (!Array.isArray(response) || response.length === 0) {
-            throw new Error(`No user found for CUSTNAME='${userExtId}'${phone ? ` and PHONE='${phone}'` : ''}`);
+            return null
           }
       
           const userRec = response[0];
@@ -329,7 +328,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       
         } catch (error) {
           console.error('Error finding user:', error);
-          throw new Error('Failed to find user');
+          return null
         }
     }
 
