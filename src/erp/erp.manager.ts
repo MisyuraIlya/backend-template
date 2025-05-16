@@ -115,18 +115,17 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         documentsType: string, 
         pageSize: number, 
         currentPage: number, 
-        user?: any, 
+        userExtId?: string, 
         search?: string
     ): Promise<DocumentsDto> {
-        return this.erp.GetDocuments(dateFrom, dateTo, documentsType, pageSize, currentPage, user, search);
+        return this.erp.GetDocuments(dateFrom, dateTo, documentsType, pageSize, currentPage, userExtId, search);
     }
 
     public async GetDocumentsItem(
         documentNumber: string, 
         documentType: string, 
-        userExId?: string
     ): Promise<DocumentItemsDto> {
-        return this.erp.GetDocumentsItem(documentNumber, documentType, userExId);
+        return this.erp.GetDocumentsItem(documentNumber, documentType);
     }
 
     public async GetCartesset(userExId: string, dateFrom: Date, dateTo: Date): Promise<dynamicTableDto> {
@@ -177,7 +176,7 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         return this.erp.GetPurchaseDelivery(string);
     }
 
-    public async GetWarehouseDetailedBySku(sku: string, warehouses: string[]): Promise<WarehousesItemDetailedDto[]> {
+    public async GetWarehouseDetailedBySku(sku: string, warehouses?: string[]): Promise<WarehousesItemDetailedDto[]> {
         return this.erp.GetWarehouseDetailedBySku(sku,warehouses);
     }
 }

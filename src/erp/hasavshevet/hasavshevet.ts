@@ -2,7 +2,7 @@ import axios from "axios";
 import { AgentStatisticDto } from "../dto/agentStatistic.dto";
 import { BonusDto } from "../dto/bonusItem.dto";
 import { CategoryDto } from "../dto/category.dto";
-import { DocumentItemsDto } from "../dto/documentItems.dto";
+import { DocumentItemDto, DocumentItemsDto } from "../dto/documentItems.dto";
 import { DocumentsDto } from "../dto/documents.dto";
 import { dynamicTableDto } from "../dto/dynamicTable";
 import { PriceDto } from "../dto/price.dto";
@@ -299,7 +299,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         documentsType: string,
         pageSize: number,
         currentPage: number,
-        user?: any,
+        userExtId?: string,
         search?: string
       ): Promise<DocumentsDto> {
         const requestData: any = {
@@ -309,7 +309,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
           page: currentPage,
           pageSize: pageSize,
           documentType: documentsType,
-          userExtId: user ? user.extId : undefined,
+          userExtId: userExtId,
           search: search,
         };
     
@@ -318,10 +318,10 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
     
           const result: DocumentsDto = {
             documents: [],
-            totalRecords: response.documentsCount,
-            totalPages: response.documentsPages,
-            currentPage: currentPage,
-            pageSize: pageSize,
+            total: response.documentsCount,
+            pageCount: response.documentsPages,
+            page: currentPage,
+            size: pageSize,
           };
     
           response.documents.forEach((document: any) => {
@@ -351,46 +351,61 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         }
     }
 
-    async GetDocumentsItem(documentNumber: string, documentType: string, userExId?: string): Promise<DocumentItemsDto> {
-        const requestData: any = {
-          dbName: process.env.ERP_DB,
-          documentId: documentNumber,
-          documentType: documentType,
+    async GetDocumentsItem(
+      documentNumber: string,
+      documentType:   string,
+      userExId?:      string
+    ): Promise<DocumentItemsDto> {
+      const requestData = {
+        dbName:       process.env.ERP_DB,
+        documentId:   documentNumber,
+        documentType: documentType,
+      };
+
+      try {
+        const response = await this.PostRequest(requestData, '/documents-items');
+
+        const result: DocumentItemsDto = {
+          products:           [],
+          files:              [],
+          totalTax:            0,
+          totalPriceAfterTax:  0,
+          totalAfterDiscount:  0,
+          totalPrecent:        0,
+          documentType:       '',
+          comment:            '',
+          base64Pdf:          '',
         };
-    
-        try {
-          const response = await this.PostRequest(requestData, '/documents-items');
-    
-          const result: DocumentItemsDto = {
-            products: [],
-            files: [],
+
+        result.documentType       = response.document.DocumentID;
+        result.totalAfterDiscount = response.document.DiscountPrcR;
+        result.totalPrecent       = response.document.VatPrc;
+        result.totalTax           = response.document.TFtalVatFree;
+        result.totalPriceAfterTax = response.document.TFtalVat;
+        result.comment            = response.document.Comment    ?? '';
+        result.base64Pdf          = response.document.PdfBase64  ?? '';
+
+        response.products.forEach((p: any) => {
+          const dto: DocumentItemDto = {
+            sku:        p.ItemKey,
+            quantity:   p.Quantity,
+            title:      p.ItemName,
+            priceByOne: p.OPrice,
+            total:      p.TFtal,
+            discount:   p.DiscountPrc,
+            comment:    p.Details,
+            product:    null,        
           };
-          result.documentType = response.document.DocumentID;
-          result.totalAfterDiscount = response.document.DiscountPrcR;
-          result.totalPrecent = response.document.VatPrc;
-          result.totalTax = response.document.TFtalVatFree;
-          result.totalPriceAfterTax = response.document.TFtalVat;
-    
-          response.products.forEach((product: any) => {
-            const dto = {
-              sku: product.ItemKey,
-              quantity: product.Quantity,
-              title: product.ItemName,
-              priceByOne: product.OPrice,
-              total: product.TFtal,
-              discount: product.DiscountPrc,
-              comment: product.Details,
-            };
-            result.products.push(dto);
-          });
-    
-          return result;
-        } catch (error) {
-          const message = error.response
-            ? `HTTP error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
-            : `Error: ${error.message}`;
-          throw new Error(message);
-        }
+          result.products.push(dto);
+        });
+
+        return result;
+      } catch (err) {
+        const message = err.response
+          ? `HTTP error: ${err.response.status} – ${JSON.stringify(err.response.data)}`
+          : `Error: ${err.message}`;
+        throw new Error(message);
+      }
     }
 
     async GetCartesset(userExId: string, dateFrom: Date, dateTo: Date): Promise<dynamicTableDto> {
@@ -830,7 +845,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         }
     }
 
-    async GetWarehouseDetailedBySku(sku: string, warehouses: string[]): Promise<WarehousesItemDetailedDto[]> {
+    async GetWarehouseDetailedBySku(sku: string, warehouses?: string[]): Promise<WarehousesItemDetailedDto[]> {
         const requestData = {
             dbName: process.env.ERP_DB,
             sku: sku,
@@ -844,7 +859,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
             response.items.forEach((warehouse: any) => {
                 const warehouseDto: WarehousesItemDetailedDto = {
                 warehouseCode: warehouse.WareHouse,
-                warehouseTilte: null, 
+                warehouseTilte: null , 
                 city: null,
                 address: null, 
                 stock: warehouse.stock,

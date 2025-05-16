@@ -22,7 +22,7 @@ export interface OnlineInterface {
       documentsType: string, 
       pageSize: number, 
       currentPage: number, 
-      user?: any, 
+      userExtId?: string, 
       search?: string
     ): Promise<DocumentsDto>;
   
@@ -56,6 +56,6 @@ export interface OnlineInterface {
 
     GetPurchaseDelivery(string: string): Promise<PurchaseDeliveryItemDto[]>;
 
-    GetWarehouseDetailedBySku(sku: string, warehouses: string[]) :Promise<WarehousesItemDetailedDto[]>
+    GetWarehouseDetailedBySku(sku: string, warehouses?: string[]) :Promise<WarehousesItemDetailedDto[]>
 
 }

@@ -1,34 +1,53 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { DocumentService } from './document.service';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { UpdateDocumentDto } from './dto/update-document.dto';
 
 @Controller('document')
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
-  @Post()
-  create(@Body() createDocumentDto: CreateDocumentDto) {
-    return this.documentService.create(createDocumentDto);
+  @Get('documentList/:documentType/:dateFrom/:dateTo')
+  async findDocuments(
+    @Param('documentType') documentType: string,
+    @Param('dateFrom') dateFrom: string,
+    @Param('dateTo') dateTo: string,
+    @Query('page', ParseIntPipe) page: number = 1,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    const fromDate = new Date(dateFrom);
+    const toDate = new Date(dateTo);
+
+    return this.documentService.getDocuments(documentType,fromDate,toDate,page,userId)
   }
 
-  @Get()
-  findAll() {
-    return this.documentService.findAll();
+  @Get('documentItems/:documentType/:documentNumber')
+  async findDocumentItems(
+    @Param('documentType') documentType: string,
+    @Param('documentNumber') documentNumber: string,
+  ) {
+    return this.documentService.getDocumentItems(documentType,documentNumber)
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.documentService.findOne(+id);
+  @Get('cartesset/:dateFrom/:dateTo/:userId')
+  async findCartesset(
+    @Param('dateFrom') dateFrom: string,
+    @Param('dateTo') dateTo: string,
+    @Param('userId') userId: string,
+  ) {
+    const fromDate = new Date(dateFrom);
+    const toDate = new Date(dateTo);
+    return this.documentService.getCartesset(fromDate,toDate,+userId)
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDocumentDto: UpdateDocumentDto) {
-    return this.documentService.update(+id, updateDocumentDto);
+  @Get('debit/:dateFrom/:dateTo/:userId')
+  async findDebit(
+    @Param('dateFrom') dateFrom: string,
+    @Param('dateTo') dateTo: string,
+    @Param('userId') userId: string,
+  ) {
+    const fromDate = new Date(dateFrom);
+    const toDate = new Date(dateTo);
+    return this.documentService.getDebit(fromDate,toDate,+userId)
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.documentService.remove(+id);
-  }
+
 }

@@ -183,7 +183,7 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       }));
     }
   
-    async GetDocuments(dateFrom: Date, dateTo: Date, documentsType: string, pageSize: number, currentPage: number, user?: any, search?: string): Promise<DocumentsDto> {
+    async GetDocuments(dateFrom: Date, dateTo: Date, documentsType: string, pageSize: number, currentPage: number, userExId?: string, search?: string): Promise<DocumentsDto> {
       const endpoint = `/${documentsType}`;
       const skip = (currentPage - 1) * pageSize;
       const filter = `DocDate ge ${dateFrom.toISOString()} and DocDate le ${dateTo.toISOString()}`;
@@ -363,11 +363,11 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       
     async GetWarehouseDetailedBySku(
       sku: string,
-      warehouses: string[]
+      warehouses?: string[]
     ): Promise<WarehousesItemDetailedDto[]> {
       const endpoint = "/Warehouses";
       
-      const warehouseFilter = warehouses
+      const warehouseFilter = warehouses!
         .map(w => `WarehouseCode eq '${w}'`)
         .join(" or ");
       
@@ -598,30 +598,39 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       return result;
     }
 
-    async GetDocumentsItem(documentNumber: string, documentType: string, userExId?: string): Promise<DocumentItemsDto> {
+    async GetDocumentsItem(
+      documentNumber: string,
+      documentType: string,
+      userExId?: string
+    ): Promise<DocumentItemsDto> {
       const endpoint = `/${documentType}`;
       const queryParams = {
         '$filter': `DocNum eq ${documentNumber}`,
         '$select': 'DocTotal,VatSum,DiscountPercent,DocumentLines,NumAtCard,CardCode,DocDate'
       };
-    
+
       const queryString = new URLSearchParams(queryParams).toString();
       const urlQuery = `${endpoint}?${queryString}`;
-    
+
       const response = await this.makeAuthorizedRequest('GET', urlQuery);
-    
+
       const result: DocumentItemsDto = {
         products: [],
-        files: []
+        files: [],
+        totalTax: 0,
+        totalPriceAfterTax: 0,
+        totalAfterDiscount: 0,
+        totalPrecent: 0,
+        documentType: documentType,
+        comment: null,
+        base64Pdf: null,
       };
-    
+
       response.value.forEach((itemRec: any) => {
-        result.totalAfterDiscount = itemRec.DocTotal;
-        result.totalPrecent = itemRec.DiscountPercent;
-        result.totalPriceAfterTax = itemRec.DocTotal;
-        result.totalTax = itemRec.VatSum;
-        result.documentType = documentType;
-    
+        result.totalAfterDiscount    = itemRec.DocTotal;
+        result.totalPrecent          = itemRec.DiscountPercent;
+        result.totalPriceAfterTax    = itemRec.DocTotal;  
+        result.totalTax              = itemRec.VatSum;
         itemRec.DocumentLines.forEach((subItem: any) => {
           const dto: DocumentItemDto = {
             sku: subItem.ItemCode,
@@ -631,15 +640,15 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
             total: subItem.LineTotal,
             discount: subItem.DiscountPercent,
             comment: subItem.FreeText,
-            product: []
+            product: null
           };
-    
           result.products.push(dto);
         });
       });
-    
+
       return result;
     }
+
 
     async SalesQuantityKeeperAlert(userExtId: string): Promise<SalesQuantityKeeperAlertLineDto[]> {
       // Format the necessary date values for the query

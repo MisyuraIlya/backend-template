@@ -3,7 +3,7 @@ import { AgentStatisticDto } from "../dto/agentStatistic.dto";
 import { BonusDto } from "../dto/bonusItem.dto";
 import { CategoryDto } from "../dto/category.dto";
 import { DocumentItemsDto } from "../dto/documentItems.dto";
-import { DocumentsDto } from "../dto/documents.dto";
+import { DocumentDto, DocumentsDto } from "../dto/documents.dto";
 import { dynamicTableDto } from "../dto/dynamicTable";
 import { PriceDto } from "../dto/price.dto";
 import { PriceListDto } from "../dto/priceList.dto";
@@ -21,15 +21,19 @@ import { CronInterface } from "../interfaces/cron.interface";
 import { OnlineInterface } from "../interfaces/online.interface";
 import axios from 'axios';
 import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
+import { PriorityDocumentsService } from "./PriorityDocuments";
+import { BadRequestException } from "@nestjs/common";
 
 export class Priority implements CoreInterface, CronInterface, OnlineInterface {
 
-    private username: string;
-    private password: string;
-    private url: string;
+    public username: string;
+    public password: string;
+    public url: string;
 
 
-    constructor(erp: IErpCredentials) {
+    constructor(
+      erp: IErpCredentials,
+    ) {
         this.username = erp.username;
         this.password = erp.password;
         this.url = erp.url;
@@ -37,7 +41,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
     
     async GetRequest(query?: string): Promise<any> {
         try {
-            console.log(`${this.url}${query || ''}`)
+          console.log(`${this.url}${query || ''}`)
             const response = await axios.get(`${this.url}${query || ''}`, {
                 auth: {
                     username: this.username,
@@ -51,7 +55,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             return response.data.value;
         } catch (error) {
             console.error('Error making GET request:', error);
-            throw new Error('Failed to fetch data');
+            throw new Error('Failed to fetch data', error);
         }
     }
 
@@ -127,6 +131,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         const url = `${endpoint}?${qs}`;
 
         try {
+          console.log('url',url)
           const raw = await this.GetRequest(url);
           console.log('raw',raw.length)
           return raw
@@ -633,31 +638,83 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
 
-    async GetDocuments(dateFrom: Date, dateTo: Date, documentsType: string, pageSize: number, currentPage: number, user?: any, search?: string): Promise<DocumentsDto> {
-        // Implement the logic here
-        return (
-          {
-            documents: [],
-            totalRecords: 0,
-            totalPages: 0,
-            currentPage:0,
-            pageSize: 0,
-          }
-        )
+    async GetDocuments(
+      dateFrom: Date,
+      dateTo: Date,
+      documentsType: string,
+      size: number,
+      page: number,
+      userExId?: string,
+      search?: string,
+    ): Promise<DocumentsDto> {
+      const skip = (page - 1) * size;
+      const top = size;
+      const svc = new PriorityDocumentsService(this);
+      let total = 0;
+      let documents: DocumentDto[] = [];
+      switch (documentsType) {
+        case 'order':
+          let res1 = await svc.getOrders(userExId, dateFrom, dateTo, skip, top);
+          documents = res1.data
+          total= res1.count
+          break;
+        case 'priceOffer':
+          let res2 = await svc.getPriceOffers(userExId, dateFrom, dateTo, skip, top);
+          documents = res2.data
+          total= res2.count
+          break;
+        case 'deliveryOrder':
+          let res3 = await svc.getDeliveryOrders(userExId, dateFrom, dateTo, skip, top);
+          documents = res3.data
+          total= res3.count
+          break;
+        case 'aiInvoice':
+          let res4 = await svc.getAiInvoices(userExId, dateFrom, dateTo, skip, top);
+          documents = res4.data
+          total= res4.count
+          break;
+        case 'ciInvoice':
+          let res5 = await svc.getCiInvoices(userExId, dateFrom, dateTo, skip, top);
+          documents = res5.data
+          total= res5.count
+          break;
+        case 'returnOrders':
+          let res6 = await svc.getReturnDocs(userExId, dateFrom, dateTo, skip, top);
+          documents = res6.data
+          total= res6.count
+          break;
+        default:
+          documents = [];
+      }
+
+      const pageCount = Math.ceil(total / size);
+
+      return {
+        documents,
+        total: total,
+        pageCount,
+        page,
+        size,
+      };
     }
 
-    async GetDocumentsItem(documentNumber: string, documentType: string, userExId?: string): Promise<DocumentItemsDto> {
-        // Implement the logic here
-        return {
-          products:[],
-          totalTax:0,
-          totalPriceAfterTax:0,
-          totalAfterDiscount:0,
-          totalPrecent:0,
-          documentType:'',
-          comment:'',
-          base64Pdf:'',
-          files:[]
+    async GetDocumentsItem(documentNumber: string, documentType: string): Promise<DocumentItemsDto> {
+        const svc = new PriorityDocumentsService(this);
+        switch (documentType) {
+          case 'orders':
+            return await svc.getOrderItems(documentNumber);
+          case 'priceOffer':
+            return await svc.getPriceOfferItems(documentNumber)
+          case 'deliveryOrder':
+            return await svc.getDeliveryOrderItems(documentNumber)
+          case 'aiInvoice':
+            return await svc.getAiInvoiceItems(documentNumber)
+          case 'ciInvoice':
+            return await svc.getCiInvoiceItems(documentNumber)
+          case 'returnOrders':
+            return await svc.getReturnDocItems(documentNumber)          
+          default:
+            throw new BadRequestException("Not found document type")
         }
     }
 
@@ -668,14 +725,14 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
     
         const queryParameters = {
             '$filter': `ACCNAME eq '${userExId}'`,
-            '$expand': `ACCFNCITEMS2_SUBFORM($filter=BALDATE ge '${formattedDateFrom}' and BALDATE le '${formattedDateTo}')`
+            '$expand': `ACCFNCITEMS2_SUBFORM($filter=BALDATE ge ${formattedDateFrom} and BALDATE le ${formattedDateTo})`
         };
     
         const queryString = new URLSearchParams(queryParameters).toString();
         const urlQuery = `${endpoint}?${queryString}`;
     
         try {
-            const response = await axios.get(urlQuery);
+            const response = await this.GetRequest(urlQuery);
             const result: dynamicTableDto = {
                 columns: [
                     'תאריך',
@@ -701,9 +758,8 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
                 ],
                 lines: []
             };
-    
-            response.data.forEach((itemRec: any) => {
-                itemRec['ACCFNCITEMS2_SUBFORM'].forEach((subRec: any) => {
+            response?.forEach((itemRec: any) => {
+                itemRec['ACCFNCITEMS2_SUBFORM']?.forEach((subRec: any) => {
                     const arr = [
                         subRec['CURDATE'],
                         subRec['BALDATE'],
@@ -733,14 +789,14 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
     
         const queryParameters = {
             '$filter': `ACCNAME eq '${userExId}'`,
-            '$expand': `ARFNCITEMS3_SUBFORM($filter=BALDATE ge '${formattedDateFrom}' and BALDATE le '${formattedDateTo}')`
+            '$expand': `ARFNCITEMS3_SUBFORM($filter=BALDATE ge ${formattedDateFrom} and BALDATE le ${formattedDateTo})`
         };
     
         const queryString = new URLSearchParams(queryParameters).toString();
         const urlQuery = `${endpoint}?${queryString}`;
     
         try {
-            const response = await axios.get(urlQuery); 
+            const response = await this.GetRequest(urlQuery); 
             const result: dynamicTableDto = {
                 columns: [
                     'תאריך',
@@ -759,7 +815,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
                 lines: []
             };
     
-            response.data.forEach((itemRec: any) => {
+            response.forEach((itemRec: any) => {
                 let sum = 0;
                 itemRec['ARFNCITEMS3_SUBFORM'].forEach((subRec: any) => {
                     const obj = {
@@ -792,15 +848,9 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         const urlQuery = `${endpoint}?${queryParameters.toString()}`;
     
         try {
-            const response = await fetch(urlQuery);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-    
-            const data = await response.json();
+            const response = await this.GetRequest(urlQuery);
             const result: PurchaseHistoryItem[] = [];
-    
-            for (const itemRec of data) {
+            for (const itemRec of response) {
                 for (const subRec of itemRec.ORDERITEMS_SUBFORM) {
                     const obj: PurchaseHistoryItem = {
                         documentNumber: itemRec.ORDNAME,
@@ -956,29 +1006,17 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
           '$select': 'TOTPRICE,IVDATE'
         });
         const url1 = `${endpoint1}?${queryParams1.toString()}`;
-      
         const endpoint2 = "/CINVOICES";
         const queryParams2 = new URLSearchParams({
           '$filter': `CUSTNAME eq '${userExtId}'`,
           '$select': 'TOTPRICE,IVDATE'
         });
         const url2 = `${endpoint2}?${queryParams2.toString()}`;
-      
         try {
-          // Fetch data from both endpoints concurrently
-          const [response1, response2] = await Promise.all([fetch(url1), fetch(url2)]);
-      
-          if (!response1.ok || !response2.ok) {
-            throw new Error('Network response was not ok');
-          }
-      
-          const data1 = await response1.json();
-          const data2 = await response2.json();
-      
-          // Combine the responses from both endpoints
+          const [response1, response2] = await Promise.all([this.GetRequest(url1), this.GetRequest(url2)]);
+          const data1 = await response1;
+          const data2 = await response2;
           const data = [...data1, ...data2];
-      
-          // Get the current year and month
           const currentDate = new Date();
           const currentYear = currentDate.getFullYear();
           const currentMonth = currentDate.getMonth() + 1;
@@ -986,116 +1024,92 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
           const previousMonthYear = currentMonth - 1 > 0 ? currentYear : currentYear - 1;
           const previousYear = currentYear - 1;
       
-          // Initialize variables for summing values
           let sumCurrentPrevMonth = 0;
           let sumPreviousYearPrevMonth = 0;
           const lastThreeMonthsPrices: number[] = [];
       
-          // Process the data
           for (const item of data) {
             const date = new Date(item.IVDATE);
             const year = date.getFullYear();
-            const month = date.getMonth() + 1; // JavaScript months are 0-indexed
+            const month = date.getMonth() + 1;
             const totPrice = parseFloat(item.TOTPRICE);
-      
-            // Sum for the previous month of the current year
             if (year === currentYear && month === previousMonth) {
               sumCurrentPrevMonth += totPrice;
             }
-      
-            // Sum for the previous month of the previous year
             if (year === previousYear && month === previousMonth) {
               sumPreviousYearPrevMonth += totPrice;
             }
-      
-            // Collect prices for the last 3 months
             const monthDiff = (currentYear - year) * 12 + (currentMonth - month);
             if (monthDiff >= 1 && monthDiff <= 3) {
               lastThreeMonthsPrices.push(totPrice);
             }
           }
-      
-          // Calculate the average of the last 3 months
           const averageLastThreeMonths =
             lastThreeMonthsPrices.length > 0
               ? lastThreeMonthsPrices.reduce((sum, price) => sum + price, 0) / lastThreeMonthsPrices.length
               : 0;
-      
-          // Prepare the result
           const result: SalesKeeperAlertDto = {
             sumPreviousMonthCurrentYear: sumCurrentPrevMonth,
             sumPreviousMonthPreviousYear: sumPreviousYearPrevMonth,
             averageLastThreeMonths: averageLastThreeMonths,
           };
-      
           return result;
-      
         } catch (error) {
           console.error('Error fetching sales keeper alert data:', error);
-          throw error; // Re-throw the error for further handling or notification
+          throw error; 
         }
     }
 
     async SalesQuantityKeeperAlert(userExtId: string): Promise<SalesQuantityKeeperAlertLineDto[]> {
-        // Endpoint 1: AINVOICES
+        const toDate = new Date();
+        const fromDate = new Date();
+        fromDate.setMonth(fromDate.getMonth() - 14);
         const endpoint1 = "/AINVOICES";
         const queryParams1 = new URLSearchParams({
-          '$filter': `CUSTNAME eq '${userExtId}'`,
+          '$filter': `CUSTNAME eq '${userExtId}' AND IVDATE ge ${fromDate.toISOString()} and IVDATE le ${toDate.toISOString()}`,
           '$select': 'IVDATE,IVNUM,DEBIT,IVTYPE',
           '$expand': 'AINVOICEITEMS_SUBFORM($select=PARTNAME,TQUANT,PDES)',
         });
         const url1 = `${endpoint1}?${queryParams1.toString()}`;
-      
-        // Endpoint 2: CINVOICES
+
         const endpoint2 = "/CINVOICES";
         const queryParams2 = new URLSearchParams({
-          '$filter': `CUSTNAME eq '${userExtId}'`,
+          '$filter': `CUSTNAME eq '${userExtId}' AND IVDATE ge ${fromDate.toISOString()} and IVDATE le ${toDate.toISOString()}`,
           '$select': 'IVDATE,IVNUM,DEBIT,IVTYPE',
           '$expand': 'CINVOICEITEMS_SUBFORM($select=PARTNAME,TQUANT,PDES)',
         });
         const url2 = `${endpoint2}?${queryParams2.toString()}`;
+
       
         try {
-          // Fetch data from both endpoints concurrently
-          const [response1, response2] = await Promise.all([fetch(url1), fetch(url2)]);
-      
-          if (!response1.ok || !response2.ok) {
-            throw new Error('Network response was not ok');
-          }
-      
-          const data1 = await response1.json();
-          const data2 = await response2.json();
-      
-          // Combine the responses from both endpoints
+          const [response1, response2] = await Promise.all([this.GetRequest(url1), this.GetRequest(url2)]);
+          const data1 = await response1;
+          const data2 = await response2;
           const data = [...data1, ...data2];
       
-          // Get the current date details
           const currentDate = new Date();
           const currentYear = currentDate.getFullYear();
           const currentMonth = currentDate.getMonth() + 1;
           const previousMonth = currentMonth - 1 > 0 ? currentMonth - 1 : 12;
           const previousYear = currentYear - 1;
       
-          // Initialize results storage
           const results: { [key: string]: any } = {};
       
-          // Process the invoices and their items
           for (const invoice of data) {
             const invoiceDate = new Date(invoice.IVDATE);
             const year = invoiceDate.getFullYear();
-            const month = invoiceDate.getMonth() + 1; // JavaScript months are 0-indexed
+            const month = invoiceDate.getMonth() + 1; 
       
-            // Process AINVOICEITEMS_SUBFORM or CINVOICEITEMS_SUBFORM depending on the endpoint
             const items = invoice.AINVOICEITEMS_SUBFORM || invoice.CINVOICEITEMS_SUBFORM;
       
             if (!items) {
-              continue; // If no subform exists, skip this invoice
+              continue; 
             }
       
             for (const item of items) {
               const partName = item.PARTNAME;
               const tQuant = parseFloat(item.TQUANT);
-              const productDescription = item.PDES || ''; // Product description
+              const productDescription = item.PDES || ''; 
       
               if (!results[partName]) {
                 results[partName] = {
@@ -1106,17 +1120,14 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
                 };
               }
       
-              // Sum for previous month of current year
               if (year === currentYear && month === previousMonth) {
                 results[partName].sumPreviousMonthCurrentYear += tQuant;
               }
       
-              // Sum for previous month of previous year
               if (year === previousYear && month === previousMonth) {
                 results[partName].sumPreviousMonthPreviousYear += tQuant;
               }
       
-              // Collect quantities for the last 3 months
               const monthDiff = (currentYear - year) * 12 + (currentMonth - month);
               if (monthDiff >= 1 && monthDiff <= 3) {
                 results[partName].lastThreeMonths.push(tQuant);
@@ -1124,7 +1135,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             }
           }
       
-          // Calculate the average of the last 3 months and prepare the result
           const resultLines: SalesQuantityKeeperAlertLineDto[] = [];
           for (const partName in results) {
             const result = results[partName];
@@ -1148,7 +1158,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       
         } catch (error) {
           console.error('Error fetching sales quantity keeper alert data:', error);
-          throw error; // Re-throw the error for further handling or notification
+          throw error; 
         }
     }
 
@@ -1208,40 +1218,123 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         const endpoint = "/CUSTOMERS";
         const queryParams = new URLSearchParams({
             '$filter': `CUSTNAME eq '${userExtId}'`,
-            '$expand': 'CUSTOBLIGO_SUBFORM'
         });
-    
-        const url = `${endpoint}?${queryParams.toString()}`;
-    
+        const queryString = new URLSearchParams(queryParams).toString();
+        const urlQuery = `${endpoint}?${queryString}`;
+
         try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-    
-            const data = await response.json();
-    
+            const response = await this.GetRequest(urlQuery);
             const result: dynamicTableDto = {
-                columns: [],
-                columnsEnglish: [],
+                columns: [
+                  "תחום עיסוק",
+                  "מס' לקוח מרכז",
+                  "שם לקוח מרכז",
+                  "קוד סוג לקוח",
+                  "תאור סוג לקוח",
+                  "חברת אם",
+                  "סווג נוסף ללקוח",
+                  "שם חברת אם",
+                  "קוד משלוח",
+                  "תאור משלוח",
+                  "קוד איזור",
+                  "תאור איזור",
+                  "מסלול שרות",
+                  "קוד טריטוריה",
+                  "שם טריטוריה",
+                  "קוד תנאי תשלום",
+                  "תנאי תשלום",
+                  "תקרת אובליגו",
+                  "מטבע אשראי"
+                ],
+                columnsEnglish: [
+                  "Business Type",
+                  "Central Customer No.",
+                  "Central Customer Name",
+                  "Customer Type Code",
+                  "Customer Type Description",
+                  "Parent Company",
+                  "Additional Customer Classification",
+                  "Parent Company Name",
+                  "Shipping Code",
+                  "Shipping Description",
+                  "Region Code",
+                  "Region Description",
+                  "Service Route",
+                  "Territory Code",
+                  "Territory Name",
+                  "Payment Terms Code",
+                  "Payment Terms Description",
+                  "Obligo Ceiling",
+                  "Credit Currency"
+                ],
                 lines: []
             };
-    
 
+            response?.forEach((itemRec: any) => {
+                const arr = [
+                    itemRec['BUSINESSTYPE'],
+                    itemRec['MCUSTNAME'],
+                    itemRec['MCUSTDES'],
+                    itemRec['CTYPECODE'],
+                    itemRec['CTYPENAME'],
+                    itemRec['PCUSTNAME'],
+                    itemRec['CTYPE2CODE'],
+                    itemRec['PCUSTDES'],
+                    itemRec['STCODE'],
+                    itemRec['STDES'],
+                    itemRec['ZONECODE'],
+                    itemRec['ZONEDES'],
+                    itemRec['TRACK'],
+                    itemRec['TERRITORYCODE'],
+                    itemRec['TERRITORYDES'],
+                    itemRec['PAYCODE'],
+                    itemRec['PAYDES'],
+                    itemRec['MAX_CREDIT'],
+                    itemRec['MAX_OBLIGO'],
+                ];
+                result.lines = arr;
+            });
             return result;
-    
         } catch (error) {
             console.error('Error fetching user profile:', error);
-            throw error; // Re-throw the error for further handling or notification
+            throw error; 
         }
     }
+
 
     async GetPurchaseDelivery(string: string): Promise<PurchaseDeliveryItemDto[]> {
         // Implement the logic here
         return []
     }
 
-    async GetWarehouseDetailedBySku(sku: string, warehouses: string[]): Promise<WarehousesItemDetailedDto[]> {
+    async GetWarehouseDetailedBySku(sku: string, warehouses?: string[]): Promise<WarehousesItemDetailedDto[]> {
+      const endpoint = "/WAREHOUSES";
+      const queryParams = new URLSearchParams({
+          '$expand': `WARHSBAL_SUBFORM($filter=PARTNAME eq '${sku}')`,
+      });
+      const queryString = new URLSearchParams(queryParams).toString();
+      const urlQuery = `${endpoint}?${queryString}`;
+       try {
+          const response = await this.GetRequest(urlQuery);
+          const data:WarehousesItemDetailedDto[]  = []
+          response?.forEach((e) => {
+            const obj = {
+              warehouseCode: e?.WARHSNAME,
+              warehouseTilte: e?.WARHSDES,
+              address: e?.ADDRESS,
+              city: e?.STATE,
+              stock: e?.WARHSBAL_SUBFORM?.[0]?.BALANCE,
+              committed: 0,
+              ordered: 0 
+
+            } as WarehousesItemDetailedDto
+            data.push(obj)
+          })
+          return data
+       } catch(error){
+          console.error('Error fetching GetWarehouseDetailedBySku:', error);
+          throw error; 
+       } 
       return []
     }
 }

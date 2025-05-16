@@ -57,6 +57,7 @@ import { GetUsersService } from './cron/GetUsers';
 import { AdminModule } from './modules/admin/admin.module';
 import { CronModule } from './cron/cron.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { DocumentModule } from './modules/document/document.module';
 
 @Module({
   imports: [
@@ -145,7 +146,8 @@ import { AuthModule } from './modules/auth/auth.module';
     ProductImagesModule,
     AdminModule,
     CronModule,
-    AuthModule
+    AuthModule,
+    DocumentModule
   ],
   controllers: [AppController],
   providers: [

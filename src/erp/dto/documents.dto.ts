@@ -7,8 +7,8 @@ export interface DocumentDto {
   agentExId?: string;
   agentName?: string;
   status?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
   dueDateAt?: Date;
   total?: number;
   user?: any; 
@@ -17,8 +17,10 @@ export interface DocumentDto {
 
 export interface DocumentsDto {
   documents: DocumentDto[];
-  totalRecords?: number | null;
-  totalPages?: number | null;
-  currentPage?: number | null;
-  pageSize?: number | null;
+  total: number;
+  pageCount: number;
+  page: number;
+  size: number;
 }
+
+
