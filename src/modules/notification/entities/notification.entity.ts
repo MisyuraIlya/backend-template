@@ -23,7 +23,7 @@ export class Notification {
   isSend: boolean;
 
   @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.notifications, { nullable: true })
-  image: MediaObject;
+  mediaObject: MediaObject;
 
   @Column()
   isPublic: boolean;

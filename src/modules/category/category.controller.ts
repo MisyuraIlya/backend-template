@@ -12,6 +12,13 @@ import { Category } from './entities/category.entity';
       primary: true,
     },
   },
+  query: {
+    join: {
+      mediaObject: {
+        eager: true,
+      },
+    },
+  },
 })
 @Controller('category')
 export class CategoryController implements CrudController<Category> {

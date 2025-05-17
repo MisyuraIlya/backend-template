@@ -20,13 +20,18 @@ export class MediaObject {
   @IsString()
   filePath: string;
 
-  @ManyToOne(() => Category, (category) => category.mediaObjects, { nullable: true })
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString()
+  source: string;
+
+  @OneToMany(() => Category, (category) => category.mediaObject)
   categories: Category;
 
   @OneToMany(() => ProductImages, (productImages) => productImages.mediaObject)
   productImages: ProductImages[];
 
-  @OneToMany(() => Notification, (notification) => notification.image)
+  @OneToMany(() => Notification, (notification) => notification.mediaObject)
   notifications: Notification[];
 
   @OneToMany(() => HomeMedia, (homeMedia) => homeMedia.media)
@@ -38,5 +43,4 @@ export class MediaObject {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Optionally add custom methods or hooks as needed
 }

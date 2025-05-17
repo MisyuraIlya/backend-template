@@ -18,6 +18,7 @@ export class CategoryService extends TypeOrmCrudService<Category>  {
       relations: [
         'categories',              
         'categories.categories',  
+        'mediaObject'
       ],
     });
   }
@@ -32,7 +33,7 @@ export class CategoryService extends TypeOrmCrudService<Category>  {
     const lookupParentId = lvl2Id > 0 ? lvl2Id : lvl1Id;
     return this.repo.find({
       where: { parent: { id: lookupParentId } },
-      relations: ['parent', 'categories'],    
+      relations: ['parent', 'categories','mediaObject'],    
       order: { orden: 'ASC' },
     });
   }

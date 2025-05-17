@@ -38,6 +38,8 @@ export class ProductService extends TypeOrmCrudService<Product> {
       .leftJoinAndSelect('p.productAttributes', 'pa')
       .leftJoinAndSelect('pa.attributeSub', 's')
       .leftJoinAndSelect('s.attribute', 'm')
+      .leftJoinAndSelect('p.productImages', 'img')
+      .leftJoinAndSelect('img.mediaObject', 'mo')
       .where('p.isPublished = true')
       .distinct(true);
 
@@ -97,6 +99,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
       .leftJoinAndSelect('p.categoryLvl2', 'c2')
       .leftJoinAndSelect('p.categoryLvl3', 'c3')
       .leftJoinAndSelect('p.productImages', 'img')
+      .leftJoinAndSelect('img.mediaObject', 'mo')
       .where('p.isPublished = true');
 
     if (filterLevel && filterId) {

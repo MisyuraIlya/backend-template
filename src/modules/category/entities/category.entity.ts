@@ -63,6 +63,4 @@ export class Category {
   @IsString()
   englishTitle: string;
 
-  @OneToMany(() => MediaObject, (mediaObject) => mediaObject.categories)
-  mediaObjects: MediaObject[];
 }
