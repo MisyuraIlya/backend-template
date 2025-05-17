@@ -66,7 +66,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
 
     const [products, total] = await qb.getManyAndCount();
     const pageCount = Math.ceil(total / limit);
-
+    this.handleStock(products)
     const filtersDto = await this.buildFiltersFrom(products);
 
     return { data: products, size: products.length, total, page, pageCount, filters: filtersDto };
@@ -88,6 +88,13 @@ export class ProductService extends TypeOrmCrudService<Product> {
       .addOrderBy('s.orden', 'ASC')
       .getMany();
     return mains
+  }
+
+  private async handleStock(products: Product[]) {
+    console.log(products)
+    products?.forEach((item) => {
+      item.stock = 9999
+    })
   }
 
   public async purchaseHistory(userId: number, productId: number){

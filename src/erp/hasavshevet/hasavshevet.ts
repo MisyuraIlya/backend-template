@@ -600,14 +600,18 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         try {
           const response = await this.PostRequest(requestData, '/agent-profile');
     
-          const result: AgentStatisticDto = {
-            totalPriceMonth: response.totalPriceMonth,
-            totalPriceChoosedDates: response.totalPriceChoosedDates,
-            totalInvoicesChoosedDates: response.totalInvoicesChoosedDates,
-            averageTotalBasketChoosedDates: response.averageTotalBasketChoosedDates,
-            monthlyTotals: response.monthlyTotals,
-            totalPriceToday: response.totalPriceToday,
-          };
+        const result: AgentStatisticDto = {
+          totalPriceMonth:              response.totalPriceMonth,
+          totalInvoicesMonth:           response.totalInvoicesMonth,
+          totalPriceToday:              response.totalPriceToday,
+          totalInvoicesToday:           response.totalInvoicesToday,
+          totalPriceChoosedDates:       response.totalPriceChoosedDates,
+          totalInvoicesChoosedDates:    response.totalInvoicesChoosedDates,
+          averageTotalBasketMonth:      response.averageTotalBasketMonth,
+          averageTotalBasketToday:      response.averageTotalBasketToday,
+          averageTotalBasketChoosedDates: response.averageTotalBasketChoosedDates,
+          monthlyTotals:                response.monthlyTotals,
+        };
     
           return result;
         } catch (error) {

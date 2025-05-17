@@ -881,7 +881,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       const endpoint = "/ORDERS";
       const now = new Date();
 
-      // --- parse dateFrom / dateTo or default to start/end of year ---
       let dateFromParsed = dateFrom
         ? new Date(dateFrom)
         : new Date(now.getFullYear(), 0, 1);
@@ -899,13 +898,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       const urlQuery = `${endpoint}?${qp.toString()}`;
 
       try {
-        const res = await fetch(urlQuery);
-        if (!res.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data: Array<{ QPRICE: string; CURDATE: string }> = await res.json();
-
-        // initialize everything to number (no undefined/null)
+        const data = await this.GetRequest(urlQuery);
         const result: AgentStatisticDto = {
           monthlyTotals: [],
           totalPriceToday: 0,
@@ -919,50 +912,45 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
           averageTotalBasketChoosedDates: 0,
         };
 
-        // prep months map, e.g. "2025-01" → 0, ...
         const monthlyTotalsMap: Record<string, number> = {};
         for (let m = 1; m <= 12; m++) {
           const key = `${now.getFullYear()}-${String(m).padStart(2, "0")}`;
           monthlyTotalsMap[key] = 0;
         }
 
-        const todayKey = now.toISOString().slice(0, 10);   // "YYYY-MM-DD"
-        const monthKey = now.toISOString().slice(0, 7);    // "YYYY-MM"
+        const todayKey = now.toISOString().slice(0, 10);   
+        const monthKey = now.toISOString().slice(0, 7);   
 
         let totalBasketsAcrossDates = 0;
 
         data.forEach(({ QPRICE, CURDATE }) => {
           const price = parseFloat(QPRICE) || 0;
 
-          // 1) chosen‐dates totals
           result.totalPriceChoosedDates = (result.totalPriceChoosedDates ?? 0) + price;
           result.totalInvoicesChoosedDates = (result.totalInvoicesChoosedDates ?? 0) + 1;
           totalBasketsAcrossDates++;
 
-          // 2) monthly map
           const d = new Date(CURDATE);
           const mapKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
           monthlyTotalsMap[mapKey] = (monthlyTotalsMap[mapKey] ?? 0) + price;
 
-          // 3) today’s totals
           if (CURDATE.startsWith(todayKey)) {
             result.totalPriceToday = (result.totalPriceToday ?? 0) + price;
             result.totalInvoicesToday = (result.totalInvoicesToday ?? 0) + 1;
           }
 
-          // 4) this month’s totals
           if (CURDATE.startsWith(monthKey)) {
             result.totalPriceMonth = (result.totalPriceMonth ?? 0) + price;
             result.totalInvoicesMonth = (result.totalInvoicesMonth ?? 0) + 1;
           }
         });
 
-        // build monthlyTotals array with Hebrew month names
         const hebrewMonths: Record<number, string> = {
           1: "ינואר", 2: "פברואר", 3: "מרץ", 4: "אפריל",
           5: "מאי", 6: "יוני", 7: "יולי", 8: "אוגוסט",
           9: "ספטמבר", 10: "אוקטובר", 11: "נובמבר", 12: "דצמבר",
         };
+
         result.monthlyTotals = Object.entries(monthlyTotalsMap).map(
           ([ym, tot]) => {
             const [, mm] = ym.split("-");
@@ -975,7 +963,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
           }
         );
 
-        // compute averages (guard against division by zero)
         result.averageTotalBasketChoosedDates =
           totalBasketsAcrossDates > 0
             ? result.totalPriceChoosedDates!/ totalBasketsAcrossDates

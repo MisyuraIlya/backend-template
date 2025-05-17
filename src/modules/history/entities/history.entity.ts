@@ -15,9 +15,6 @@ export class History {
   @IsString()
   orderExtId: string;
 
-  @ManyToOne(() => User, (user) => user.histories)
-  user: User;
-
   @Column({ type: 'date', nullable: true })
   @IsOptional()
   @IsDate()
@@ -56,17 +53,8 @@ export class History {
   @IsInt()
   deliveryPrice: number;
 
-  @OneToMany(() => HistoryDetailed, (historyDetailed) => historyDetailed.history)
-  historyDetaileds: HistoryDetailed[];
-
   @Column({ length: 255 })
   documentType: string;
-
-  @ManyToOne(() => User, (user) => user.agentHistories)
-  agent: User;
-
-  @ManyToOne(() => User, (user) => user.approvedHistories)
-  agentApproved: User;
 
   @Column()
   @IsBoolean()
@@ -91,9 +79,6 @@ export class History {
   @IsString()
   error: string;
 
-  @ManyToOne(() => Payment, (payment) => payment.histories)
-  payment: Payment;
-
   @Column()
   tax: number;
 
@@ -101,4 +86,20 @@ export class History {
   @IsOptional()
   @IsString()
   deliveryType: string;
+
+  @OneToMany(() => HistoryDetailed, (historyDetailed) => historyDetailed.history)
+  historyDetaileds: HistoryDetailed[];
+
+  @ManyToOne(() => User, (user) => user.agentHistories)
+  agent: User;
+
+  @ManyToOne(() => User, (user) => user.approvedHistories)
+  agentApproved: User;
+
+  @ManyToOne(() => User, (user) => user.histories)
+  user: User;
+
+  @ManyToOne(() => Payment, (payment) => payment.histories)
+  payment: Payment;
+
 }

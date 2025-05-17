@@ -158,7 +158,8 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
         totalInvoicesToday: response.value[0]?.totalInvoicesToday || 0,
         totalPriceChoosedDates: response.value[0]?.totalPriceChoosedDates || 0,
         totalPriceMonth: response.value[0]?.totalPriceMonth || 0,
-        totalPriceToday: response.value[0]?.totalPriceToday || 0
+        totalPriceToday: response.value[0]?.totalPriceToday || 0,
+        monthlyTotals: []
       };
     }
   

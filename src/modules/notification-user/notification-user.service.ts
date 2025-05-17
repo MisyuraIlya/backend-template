@@ -11,4 +11,24 @@ export class NotificationUserService extends TypeOrmCrudService<NotificationUser
   ) {
     super(repo);
   }
+
+  async findByFilters(
+    userId?: number,
+    isRead?: boolean,
+  ): Promise<NotificationUser[]> {
+    const where: any = {};
+
+    if (userId != null) {
+      where.user = { id: userId };
+    }
+    if (isRead != null) {
+      where.isRead = isRead;
+    }
+
+    return this.repo.find({
+      where,
+      relations: ['user', 'notification'],
+      order: { createdAt: 'DESC' },
+    });
+  }
 }
