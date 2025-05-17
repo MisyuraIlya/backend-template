@@ -72,6 +72,41 @@ export class ProductService extends TypeOrmCrudService<Product> {
     return { data: products, size: products.length, total, page, pageCount, filters: filtersDto };
   }
 
+  async getAdminProducts(
+    lvl1: number,
+    lvl2: number,
+    lvl3: number,
+  ): Promise<Product[]> {
+    let filterLevel: 1 | 2 | 3 | null = null;
+    let filterId: number | null = null;
+
+    if (lvl3 > 0) {
+      filterLevel = 3;
+      filterId = lvl3;
+    } else if (lvl2 > 0) {
+      filterLevel = 2;
+      filterId = lvl2;
+    } else if (lvl1 > 0) {
+      filterLevel = 1;
+      filterId = lvl1;
+    }
+
+    const qb = this.productRepo
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.categoryLvl1', 'c1')
+      .leftJoinAndSelect('p.categoryLvl2', 'c2')
+      .leftJoinAndSelect('p.categoryLvl3', 'c3')
+      .leftJoinAndSelect('p.productImages', 'img')
+      .where('p.isPublished = true');
+
+    if (filterLevel && filterId) {
+      qb.andWhere(`p.category_lvl${filterLevel}_id = :id`, { id: filterId });
+    }
+    qb.orderBy('p.orden', 'ASC');
+
+    return qb.getMany();
+  }
+
   private async buildFiltersFrom(products: Product[]): Promise<AttributeMain[]> {
     const subSet = new Set(
       products.flatMap(p => p.productAttributes?.map(pa => pa.attributeSub.id) || [])

@@ -11,7 +11,7 @@ export class DocumentController {
     @Param('dateFrom') dateFrom: string,
     @Param('dateTo') dateTo: string,
     @Query('page', ParseIntPipe) page: number = 1,
-    @Query('userId', ParseIntPipe) userId: number,
+    @Query('userId') userId: number,
   ) {
     const fromDate = new Date(dateFrom);
     const toDate = new Date(dateTo);

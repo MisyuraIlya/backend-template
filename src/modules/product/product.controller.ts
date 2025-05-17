@@ -22,10 +22,10 @@ export class ProductController implements CrudController<Product> {
     @Param('lvl1', ParseIntPipe) lvl1: number,
     @Param('lvl2', ParseIntPipe) lvl2: number,
     @Param('lvl3', ParseIntPipe) lvl3: number,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('page', new DefaultValuePipe(1)) page: number,
     @Query('itemsPerPage', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query() query: Record<string, any>,
-    @Query('userId', ParseIntPipe) userId: number,
+    @Query('userId') userId: number,
   ) {
     const filters: Record<string, string> = {};
     Object.entries(query).forEach(([key, val]) => {
@@ -34,7 +34,13 @@ export class ProductController implements CrudController<Product> {
         filters[match[1]] = val;
       }
     });
-
+    console.log(
+      lvl1,
+      lvl2,
+      lvl3,
+      page,
+      limit,
+    )
     return this.service.getCatalog(
       lvl1,
       lvl2,
@@ -43,6 +49,15 @@ export class ProductController implements CrudController<Product> {
       limit,
       filters,  
     );
+  }
+
+  @Get('adminProducts/:lvl1/:lvl2/:lvl3')
+  async adminProducts(
+    @Param('lvl1', ParseIntPipe) lvl1: number,
+    @Param('lvl2', ParseIntPipe) lvl2: number,
+    @Param('lvl3', ParseIntPipe) lvl3: number,
+  ) {
+    return this.service.getAdminProducts(+lvl1,+lvl2,+lvl3)
   }
 
   @Get('purchaseHistory/:userId/:productId')

@@ -6,10 +6,13 @@ import { AttributeMain } from './entities/attribute-main.entity';
 @Crud({
   model: { type: AttributeMain },
   params: {
-    id: {
-      field: 'id',
-      type: 'number',
-      primary: true,
+    id: { field: 'id', type: 'number', primary: true },
+  },
+  query: {
+    join: {
+      SubAttributes: {
+        eager: true,
+      },
     },
   },
 })
