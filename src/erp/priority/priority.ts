@@ -1273,8 +1273,26 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
 
 
     async GetStockOnline(sku: string | string[], warehouse?: string): Promise<StockDto[]> {
-        // Implement the logic here
-        return []
+      const skuList = Array.isArray(sku) ? sku : [sku];
+      const skuFilter = skuList.map(s => `PARTNAME eq '${s}'`).join(" or ");
+      const endpoint1 = "/LOGPART";
+      const queryParams1 = new URLSearchParams({
+        '$filter': `${skuFilter}`,
+        '$select': 'PARTNAME',
+        '$expand': 'LOGCOUNTERS_SUBFORM($select=BALANCE)',
+      });
+      const urlQuery = `${endpoint1}?${queryParams1.toString()}`;
+      const data = await this.GetRequest(urlQuery);
+      const result: StockDto[] = []
+      data?.forEach((item) => {
+        const obj: StockDto = {
+          sku: item.PARTNAME,
+          stock: item?.LOGCOUNTERS_SUBFORM[0]?.BALANCE,
+          warehouse: null
+        }
+        result.push(obj)
+      })
+      return result
     }
 
     async ProductsImBuy(userExtId: string): Promise<string[]> {

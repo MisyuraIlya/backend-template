@@ -86,12 +86,10 @@ export class PriceInterceptor implements NestInterceptor {
             basePrice: upd.basePrice,
             finalPrice: upd.finalPrice,
             discount: upd.discount,
-            stock: upd.stock,
             packQuantity: upd.packQuantity,
           }
         : item.product;
 
-      const stock    = upd?.stock        ?? item.stock;
       const price    = upd?.finalPrice   ?? item.price;
       const discount = upd?.discount     ?? item.discount;
       const total    = price * item.quantity - discount;
@@ -99,7 +97,6 @@ export class PriceInterceptor implements NestInterceptor {
       return {
         ...item,
         product,
-        stock,
         price,
         discount,
         total,
