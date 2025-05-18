@@ -183,7 +183,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
       
-
     async GetUsers(): Promise<UserDto[]> {
       const endpoint = "/CUSTOMERS";
       const queryExtras = {
@@ -334,8 +333,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
 
-
-
     async GetVariety(): Promise<string[]> {
         // Implement the logic here
         return []
@@ -465,7 +462,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
 
-    async  GetBonuses(): Promise<BonusDto[]> {
+    async GetBonuses(): Promise<BonusDto[]> {
         const endpoint = "/CUSTOMERS";
         const queryExtras = {
           '$select': 'CUSTNAME',
@@ -521,7 +518,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
       
-
     async GetAgents(): Promise<UserDto[]> {
         const endpoint = '/AGENTS';
       
@@ -559,7 +555,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
       
         return response;
-      }
+    }
       
     private async SendOrderTemplate(history: History): Promise<string> {
         const obj: any = {};
@@ -584,7 +580,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         } else {
           throw new Error('Order not transmitted');
         }
-      }
+    }
       
     private async SendQuoteTemplate(history: History): Promise<string> {
         const obj: any = {};
@@ -609,7 +605,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         } else {
           throw new Error('Quote not transmitted');
         }
-      }
+    }
       
     private async SendReturnTemplate(history: History): Promise<string> {
         const obj: any = {};
@@ -982,7 +978,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       }
     }
 
-
     async SalesKeeperAlert(userExtId: string): Promise<SalesKeeperAlertDto> {
         const endpoint1 = "/AINVOICES";
         const queryParams1 = new URLSearchParams({
@@ -1146,11 +1141,136 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
 
+    async GetPriceOnline(
+      userExtId: string,
+      sku: string | string[],
+      priceListNumber: string | string[],
+      date: string = new Date().toISOString()
+    ): Promise<PriceDto[]> {
+      const endpoint1 = "/PRICELIST";
+      const endpoint2 = "/CUSTOMERS";
+      const now = new Date(date);
+      const result: PriceDto[] = [];
 
-    async GetPriceOnline(userExtId: string, sku: string | string[], priceListNumber: string | string[]): Promise<PriceDto[]> {
-        // Implement the logic here
-        return []
+      const plFilter = Array.isArray(priceListNumber)
+        ? priceListNumber.map(pl => `PLNAME eq '${pl}'`).join(" or ")
+        : `PLNAME eq '${priceListNumber}'`;
+
+      const skuList = Array.isArray(sku) ? sku : [sku];
+      const skuFilter = skuList.map(s => `PARTNAME eq '${s}'`).join(" or ");
+
+      const expandName = "PARTPRICE2_SUBFORM";
+      const expandClause1 = `${expandName}(` +
+        `$select=PARTNAME,PRICE,PERCENT,VATPRICE;` +
+        `$filter=${skuFilter}` +
+      `)`;
+
+      const params1 = new URLSearchParams({
+        "$filter": plFilter,
+        "$select": "PLIST,PLNAME,PLDATE",
+        "$expand": expandClause1,
+      });
+      const url1 = `${endpoint1}?${params1}`;
+
+      const params2 = new URLSearchParams({
+        "$filter": `CUSTNAME eq '${userExtId}'`,
+        "$select": "CUSTNAME",
+        "$expand": [
+          `CUSTPARTDISC_SUBFORM($filter=${skuFilter};$select=PARTNAME,PERCENT,FROMDATE,EXPIRYDATE)`,
+          `CUSTPARTPRICE_SUBFORM($filter=${skuFilter};$select=PARTNAME,PRICE,VPRICE,FROMDATE,EXPIRYDATE)`,
+          `CUSTFAMILYDISC_SUBFORM`
+        ].join(","),
+      });
+      const url2 = `${endpoint2}?${params2}`;
+
+      const skipPL = Array.isArray(priceListNumber) && priceListNumber.length === 0;
+
+      const custPromise = this.GetRequest(url2);
+      let plPromise: Promise<any> | null = null;
+      if (!skipPL) {
+        plPromise = this.GetRequest(url1);
+      }
+
+      let plResponse: any[] = [];
+      let custResponse: any[] = [];
+
+      if (plPromise) {
+        [plResponse, custResponse] = await Promise.all([plPromise, custPromise]);
+      } else {
+        custResponse = await custPromise;
+      }
+
+      plResponse?.forEach(item => {
+        item.PARTPRICE2_SUBFORM?.forEach(item2 => {
+          result.push({
+            sku: item2.PARTNAME,
+            group: null,
+            basePrice: null,
+            price: item2.PRICE,
+            discount: item2.PERCENT,
+            priceAfterDiscount: null,
+            vatPrice: item2.VATPRICE,
+            vatAfterDiscount: null,
+          });
+        });
+      });
+
+      custResponse?.forEach(item => {
+        item.CUSTPARTDISC_SUBFORM
+          ?.filter(disc => {
+            const from = new Date(disc.FROMDATE);
+            const to = new Date(disc.EXPIRYDATE);
+            return from <= now && now <= to;
+          })
+          .forEach(disc => {
+            result.push({
+              sku: disc.PARTNAME,
+              group: null,
+              basePrice: null,
+              price: null,
+              discount: disc.PERCENT,
+              priceAfterDiscount: null,
+              vatPrice: null,
+              vatAfterDiscount: null,
+            });
+          });
+
+        item.CUSTPARTPRICE_SUBFORM
+          ?.filter(pr => {
+            const from = new Date(pr.FROMDATE);
+            const to = new Date(pr.EXPIRYDATE);
+            return from <= now && now <= to;
+          })
+          .forEach(pr => {
+            result.push({
+              sku: pr.PARTNAME,
+              group: null,
+              basePrice: null,
+              price: pr.PRICE,
+              discount: null,
+              priceAfterDiscount: null,
+              vatPrice: pr.VPRICE,
+              vatAfterDiscount: null,
+            });
+          });
+
+        item.CUSTFAMILYDISC_SUBFORM?.forEach(fam => {
+          result.push({
+            sku: null,
+            group: fam.FAMILYNAME,
+            basePrice: null,
+            price: null,
+            discount: fam.PERCENT,
+            priceAfterDiscount: null,
+            vatPrice: null,
+            vatAfterDiscount: null,
+          });
+        });
+      });
+
+      return result;
     }
+
 
     async GetStockOnline(sku: string | string[], warehouse?: string): Promise<StockDto[]> {
         // Implement the logic here
@@ -1284,7 +1404,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             throw error; 
         }
     }
-
 
     async GetPurchaseDelivery(string: string): Promise<PurchaseDeliveryItemDto[]> {
         // Implement the logic here

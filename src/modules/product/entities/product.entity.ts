@@ -33,6 +33,10 @@ export class Product {
 
   @Column({ type: 'varchar', length: 255, nullable:true })
   @IsString()
+  group: string;
+
+  @Column({ type: 'varchar', length: 255, nullable:true })
+  @IsString()
   title: string;
 
   @Column({

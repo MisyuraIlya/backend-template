@@ -693,10 +693,10 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
           response.prices.forEach((price: any) => {
             const priceDto: PriceDto = {
               sku: price.ItemKey,
+              group: null,
               basePrice: price.originalPrice,
               price: price.price,
-              discountPrecent: price.DiscountPrc,
-              discountExparationDate: price.DiscountExpirationDate ? new Date(price.DiscountExpirationDate) : null,
+              discount: price.DiscountPrc,
               priceAfterDiscount: price.PriceAfterDiscount,
               vatPrice: price.VatPrice,
               vatAfterDiscount: price.VatAfterDiscount,

@@ -31,7 +31,7 @@ export class ProductController implements CrudController<Product> {
     @Param('lvl2', ParseIntPipe) lvl2: number,
     @Param('lvl3', ParseIntPipe) lvl3: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('itemsPerPage', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('itemsPerPage', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query() query: Record<string, any>,
     @Query('userId', ParseIntPipe) userId: number,
     @Query('search') search?: string,
