@@ -11,4 +11,13 @@ export class AgentTargetService extends TypeOrmCrudService<AgentTarget> {
   ) {
     super(repo);
   }
+
+  async findByAgentAndYear(agentId: number, year: string): Promise<AgentTarget[]> {
+    return this.repo.find({
+      where: {
+        agent: { id: agentId },
+        year,
+      },
+    });
+  }
 }

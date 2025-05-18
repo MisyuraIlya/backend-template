@@ -1,7 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AgentTargetService } from './agent-target.service';
-import { CreateAgentTargetDto } from './dto/create-agent-target.dto';
-import { UpdateAgentTargetDto } from './dto/update-agent-target.dto';
 import { Crud, CrudController } from '@dataui/crud';
 import { AgentTarget } from './entities/agent-target.entity';
 
@@ -19,4 +17,13 @@ import { AgentTarget } from './entities/agent-target.entity';
 export class AgentTargetController implements CrudController<AgentTarget>{
   constructor(public readonly service: AgentTargetService) {}
 
+  @Get()
+  async getByAgentAndYear(
+    @Query('agent') agent: number,
+    @Query('year') year: string,
+  ) {
+    if (agent && year) {
+      return this.service.findByAgentAndYear(agent, year);
+    }
+  }
 }

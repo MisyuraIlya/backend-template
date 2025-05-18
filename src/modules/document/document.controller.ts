@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { DocumentService } from './document.service';
+import { CartCheckDto } from './dto/cart-check.dto';
 
 @Controller('document')
 export class DocumentController {
@@ -49,5 +50,18 @@ export class DocumentController {
     return this.documentService.getDebit(fromDate,toDate,+userId)
   }
 
+  @Get('restoreCart/:documentType/:userId/:documentNumber')
+  async restoreCart(
+    @Param('documentType') documentType: string,
+    @Param('userId') userId: string,
+    @Param('documentNumber') documentNumber: string,
+  ) {
+    return this.documentService.restoreCart(documentType,+userId,documentNumber)
+  }
+
+  @Post('cartCheck')
+  async cartCheck(@Body() dto: CartCheckDto) {
+    return this.documentService.checkCart(dto)
+  }
 
 }

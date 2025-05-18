@@ -22,10 +22,11 @@ export class ProductController implements CrudController<Product> {
     @Param('lvl1', ParseIntPipe) lvl1: number,
     @Param('lvl2', ParseIntPipe) lvl2: number,
     @Param('lvl3', ParseIntPipe) lvl3: number,
-    @Query('page', new DefaultValuePipe(1)) page: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('itemsPerPage', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query() query: Record<string, any>,
-    @Query('userId') userId: number,
+    @Query('userId', ParseIntPipe) userId: number,
+    @Query('search') search?: string,
   ) {
     const filters: Record<string, string> = {};
     Object.entries(query).forEach(([key, val]) => {
@@ -34,20 +35,15 @@ export class ProductController implements CrudController<Product> {
         filters[match[1]] = val;
       }
     });
-    console.log(
-      lvl1,
-      lvl2,
-      lvl3,
-      page,
-      limit,
-    )
+
     return this.service.getCatalog(
       lvl1,
       lvl2,
       lvl3,
       page,
       limit,
-      filters,  
+      filters,
+      search,
     );
   }
 

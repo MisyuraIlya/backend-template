@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { ErpManager } from 'src/erp/erp.manager';
 import { Product } from '../product/entities/product.entity';
+import { History } from '../history/entities/history.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Product]),
+    TypeOrmModule.forFeature([User, Product, History]),
   ],
   controllers: [DocumentController],
   providers: [

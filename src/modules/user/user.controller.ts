@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { Crud, CrudController } from '@dataui/crud';
-import { In, Not } from 'typeorm';
+import { ILike, In, Not } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserService } from './user.service';
 import { UsersTypes } from './enums/UsersTypes';
@@ -21,25 +21,53 @@ export class UserController implements CrudController<User> {
     @Query('limit') limit = 25,
     @Query('isAgent') isAgent?: string,
     @Query('isBlocked') isBlocked?: string,
+    @Query('role') role?: UsersTypes,        
+    @Query('search') search?: string,        
   ) {
-    const where: any = {};
-
+    let baseWhere: any = {};
+  
     if (isAgent !== undefined) {
       if (isAgent === 'true') {
-        where.role = In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]);
+        baseWhere.role = In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]);
       } else {
-        where.role = Not(In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]));
+        baseWhere.role = Not(In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]));
       }
     }
-
+  
     if (isBlocked !== undefined) {
-      where.isBlocked = isBlocked === 'true';
+      baseWhere.isBlocked = isBlocked === 'true';
     }
-
-    return this.service.findWithFilters(where, {
-      page:  +page,
-      limit: +limit,
+  
+    if (role) {
+      baseWhere.role = role;
+    }
+  
+    let where: any;
+    if (search) {
+      const q = `%${search}%`;
+      where = [
+        { ...baseWhere, name: ILike(q) },
+        { ...baseWhere, extId: ILike(q) },
+      ];
+    } else {
+      where = baseWhere;
+    }
+  
+    const skip = (page - 1) * limit;
+    const [data, total] = await this.service['userRepository'].findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { name: 'ASC' },
     });
+  
+    return {
+      page,
+      size: limit,
+      pageCount: Math.ceil(total / limit),
+      total,
+      data,
+    };
   }
 
   @Get('userProfile/:userId')

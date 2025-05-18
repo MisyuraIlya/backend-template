@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Product } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { AttributeMain } from '../attribute-main/entities/attribute-main.entity';
 
 import {
@@ -32,6 +32,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
     page = 1,
     limit = 20,
     filters: Record<string, string> = {},
+    search?: string,
   ): Promise<CatalogResponse> {
     const qb = this.productRepo
       .createQueryBuilder('p')
@@ -53,7 +54,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
 
     const subIds = Object.values(filters)
       .map(v => parseInt(v, 10))
-      .filter(v => !isNaN(v));
+      .filter(n => !isNaN(n));
     subIds.forEach((subId, idx) => {
       qb.innerJoin('p.productAttributes', `fpa${idx}`)
         .innerJoin(
@@ -64,14 +65,33 @@ export class ProductService extends TypeOrmCrudService<Product> {
         );
     });
 
+    if (search?.trim()) {
+      const term = `%${search.trim()}%`;
+      qb.andWhere(
+        new Brackets(q => {
+          q.where('p.sku LIKE :term', { term })
+           .orWhere('p.title LIKE :term', { term })
+           .orWhere('p.titleEnglish LIKE :term', { term });
+        }),
+      );
+    }
+
     qb.skip((page - 1) * limit).take(limit);
 
     const [products, total] = await qb.getManyAndCount();
     const pageCount = Math.ceil(total / limit);
-    this.handleStock(products)
+
+    await this.handleStock(products);
     const filtersDto = await this.buildFiltersFrom(products);
 
-    return { data: products, size: products.length, total, page, pageCount, filters: filtersDto };
+    return {
+      data: products,
+      size: products.length,
+      total,
+      page,
+      pageCount,
+      filters: filtersDto,
+    };
   }
 
   async getAdminProducts(

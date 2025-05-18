@@ -6,10 +6,19 @@ import { Bonus } from './entities/bonus.entity';
 @Crud({
   model: { type: Bonus },
   params: {
-    id: {
-      field: 'id',
-      type: 'number',
-      primary: true,
+    id: { field: 'id', type: 'number', primary: true },
+  },
+  query: {
+    join: {
+      bonusDetaileds: {
+        eager: true,
+      },
+      'bonusDetaileds.product': {
+        eager: true,
+      },
+      'bonusDetaileds.bonusProduct': {
+        eager: true,
+      },
     },
   },
 })

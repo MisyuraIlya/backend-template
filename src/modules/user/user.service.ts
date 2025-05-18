@@ -6,6 +6,8 @@ import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
 import { ErpManager } from 'src/erp/erp.manager';
 import { UsersTypes } from './enums/UsersTypes';
 import { AgentStatisticDto, AgentStatisticLine, MonthlyTotalWithTarget } from 'src/erp/dto/agentStatistic.dto';
+import { AgentTarget } from '../agent-target/entities/agent-target.entity';
+import { AgentObjective } from '../agent-objective/entities/agent-objective.entity';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<User> {
@@ -13,6 +15,10 @@ export class UserService extends TypeOrmCrudService<User> {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly erpManager: ErpManager,
+    @InjectRepository(AgentTarget)
+    private readonly agentTargetRepository: Repository<AgentTarget>,
+    @InjectRepository(AgentObjective)
+    private readonly agentObjectiveRepository: Repository<AgentObjective>,
 
   ) {
     super(userRepository);
@@ -83,6 +89,9 @@ export class UserService extends TypeOrmCrudService<User> {
       case UsersTypes.AGENT:
         baseWhere = { agent: { id: userId } as any };
         break;
+      case UsersTypes.ADMIN:
+          baseWhere = { role: UsersTypes.USER };
+          break;
       default:
         throw new ForbiddenException(
           `User with role ${user.role} cannot list clients`,
@@ -226,13 +235,71 @@ export class UserService extends TypeOrmCrudService<User> {
     agentId: number,
     dateFrom: Date,
     dateTo: Date,
-  ){
-   const user = await this.userRepository.findOneBy({ id: agentId });
-    if (!user) {
-      throw new NotFoundException(`User with id ${agentId} not found`);
+  ): Promise<AgentObjective[]> {
+    const agent = await this.userRepository.findOneBy({ id: agentId });
+    if (!agent) {
+      throw new NotFoundException(`Agent with id ${agentId} not found`);
     }
-    // if (user?.role !== UsersTypes.AGENT || user?.role !== UsersTypes.SUPER_AGENT){
-    //   throw new NotFoundException(`${agentId} is not agent`);
-    // }
+  
+    const missions = await this.agentObjectiveRepository
+      .createQueryBuilder('ao')
+      .leftJoinAndSelect('ao.agent', 'agent')
+      .leftJoinAndSelect('ao.client', 'client')
+      .where('ao.agent = :agentId', { agentId })
+      .andWhere('ao.date >= :from', { from: dateFrom.toISOString() })
+      .andWhere('ao.date <= :to',   { to:   dateTo.toISOString() })
+      .orderBy('ao.hourFrom', 'ASC')
+      .getMany();
+  
+    const byDay: Record<string, AgentObjective[]> = {};
+    for (const m of missions) {
+      const dateObj = m.date instanceof Date
+        ? m.date
+        : new Date(m.date);
+  
+      const dayKey = dateObj.toISOString().split('T')[0];
+      (byDay[dayKey] = byDay[dayKey] || []).push({
+        ...m,
+        date: dateObj,
+      });
+    }
+  
+    const mergedPerDay = Object.values(byDay).map(dayMissions =>
+      this.mergeOverlappedTimes(dayMissions)
+    );
+  
+    return mergedPerDay.flat();
   }
+
+  private mergeOverlappedTimes(tasks: AgentObjective[]): AgentObjective[] {
+    if (!tasks.length) return [];
+  
+    const sorted = tasks.slice().sort((a, b) =>
+      a.hourFrom.localeCompare(b.hourFrom)
+    );
+  
+    const merged: AgentObjective[] = [];
+    let current = { ...sorted[0] };
+  
+    for (let i = 1; i < sorted.length; i++) {
+      const next = sorted[i];
+      const currentEnd = Number(current.hourTo);
+      const nextStart  = Number(next.hourFrom);
+  
+      if (!isNaN(currentEnd) && !isNaN(nextStart) && nextStart <= currentEnd) {
+        const nextEnd = Number(next.hourTo);
+        const maxEnd  = Math.max(currentEnd, isNaN(nextEnd) ? currentEnd : nextEnd);
+        current.hourTo = maxEnd.toString();
+      } else {
+        merged.push(current);
+        current = { ...next };
+      }
+    }
+  
+    merged.push(current);
+    return merged;
+  }
+
+
+
 }
