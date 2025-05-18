@@ -59,11 +59,16 @@ export class StockInterceptor implements NestInterceptor {
       && Array.isArray(x.data);
   }
 
-  private async handleProductList( response: { data: Product[]; [key: string]: any },) {
-    if(this.isOnline){
-      await this.handleStockOnline(response.data)
+  private async handleProductList(
+    response: { data: Product[]; [key: string]: any },
+  ) {
+    if (this.isOnline) {
+      await this.handleStockOnline(response.data);
     }
-    return response.data
+    return {
+      ...response,           
+      data: response.data,   
+    };
   }
 
   private async handleStockOnline(products: Product[]) {
