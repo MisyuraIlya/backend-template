@@ -1,8 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseInterceptors } from '@nestjs/common';
 import { DocumentService } from './document.service';
 import { CartCheckDto } from './dto/cart-check.dto';
+import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
+import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
+import { StockHandler } from 'src/common/decorators/stock-handler.decorator';
+import { PriceHandler } from 'src/common/decorators/price-handler.decorator';
 
 @Controller('document')
+@UseInterceptors(StockInterceptor, PriceInterceptor)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
@@ -51,6 +56,8 @@ export class DocumentController {
   }
 
   @Get('restoreCart/:documentType/:userId/:documentNumber')
+  @StockHandler()
+  @PriceHandler()
   async restoreCart(
     @Param('documentType') documentType: string,
     @Param('userId') userId: string,

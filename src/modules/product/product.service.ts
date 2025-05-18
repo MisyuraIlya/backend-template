@@ -149,7 +149,6 @@ export class ProductService extends TypeOrmCrudService<Product> {
   }
 
   private async handleStock(products: Product[]) {
-    console.log(products)
     products?.forEach((item) => {
       item.stock = 9999
     })

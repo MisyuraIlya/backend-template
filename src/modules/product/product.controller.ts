@@ -1,7 +1,11 @@
-import { Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Query, UseInterceptors } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { Crud, CrudController } from '@dataui/crud';
 import { Product } from './entities/product.entity';
+import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
+import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
+import { StockHandler } from 'src/common/decorators/stock-handler.decorator';
+import { PriceHandler } from 'src/common/decorators/price-handler.decorator';
 
 @Crud({
   model: { type: Product },
@@ -13,11 +17,15 @@ import { Product } from './entities/product.entity';
     },
   },
 })
+
+@UseInterceptors(StockInterceptor, PriceInterceptor)
 @Controller('product')
 export class ProductController implements CrudController<Product> {
   constructor(public readonly service: ProductService) {}
 
   @Get(':documentType/:mode/:lvl1/:lvl2/:lvl3')
+  @StockHandler()
+  @PriceHandler()
   async getCatalog(
     @Param('lvl1', ParseIntPipe) lvl1: number,
     @Param('lvl2', ParseIntPipe) lvl2: number,

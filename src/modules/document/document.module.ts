@@ -6,6 +6,8 @@ import { User } from '../user/entities/user.entity';
 import { ErpManager } from 'src/erp/erp.manager';
 import { Product } from '../product/entities/product.entity';
 import { History } from '../history/entities/history.entity';
+import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
+import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { History } from '../history/entities/history.entity';
   controllers: [DocumentController],
   providers: [
     DocumentService,
-    ErpManager
+    ErpManager,
+    StockInterceptor,
+    PriceInterceptor,
   ],
 })
 export class DocumentModule {}

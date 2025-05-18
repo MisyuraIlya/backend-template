@@ -41,7 +41,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
     
     async GetRequest(query?: string): Promise<any> {
         try {
-          console.log(`${this.url}${query || ''}`)
             const response = await axios.get(`${this.url}${query || ''}`, {
                 auth: {
                     username: this.username,
@@ -131,9 +130,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         const url = `${endpoint}?${qs}`;
 
         try {
-          console.log('url',url)
           const raw = await this.GetRequest(url);
-          console.log('raw',raw.length)
           return raw
             .map((r: any) => {
               const dto: ProductDto = {
