@@ -1,11 +1,12 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { ErpManager } from 'src/erp/erp.manager';
 import { User } from '../user/entities/user.entity';
 import { UsersTypes } from '../user/enums/UsersTypes';
-
+import { compare } from 'bcryptjs';
+import * as bcryptjs from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { ValidationDto } from './dto/validation.dto';
 import { RestorePasswordStepOneDto } from './dto/restore-password-step-one.dto';
@@ -13,12 +14,17 @@ import { RestorePasswordStepTwoDto } from './dto/restore-password-step-two.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateAgentDto } from './dto/create-agent.dto';
-import { LoginDto } from './dto/login.dto';
+import { ConfigService } from '@nestjs/config';
+import { TokenPayload } from './token-payload.interface';
+import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly erpManager: ErpManager,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
@@ -27,18 +33,61 @@ export class AuthService {
   // Public API
   //
 
-  async login(dto: LoginDto) {
-    const user = await this.userRepo.findOneBy({ username: dto.username });
-    if (!user) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
-    const passwordsMatch = dto.password === user.password
-    if (!passwordsMatch) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
+  async login(user: User, response: Response) {
 
+    const expiresAccessToken = new Date();
+
+    expiresAccessToken.setMilliseconds(
+      expiresAccessToken.getTime() +
+        parseInt(
+          this.configService.getOrThrow<string>(
+            'JWT_ACCESS_TOKEN_EXPIRATION_MS',
+          ),
+        ),
+    );
+
+    const expiresRefreshToken = new Date();
+    expiresRefreshToken.setMilliseconds(
+      expiresRefreshToken.getTime() +
+        parseInt(
+          this.configService.getOrThrow<string>(
+            'JWT_REFRESH_TOKEN_EXPIRATION_MS',
+          ),
+        ),
+    );
+
+    const tokenPayload: TokenPayload = {
+      userId: user.id,
+    };
     this.ensureNotBlocked(user);
+    const accessToken = this.jwtService.sign(tokenPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_SECRET'),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        'JWT_ACCESS_TOKEN_EXPIRATION_MS',
+      )}ms`,
+    });
 
+    const refreshToken = this.jwtService.sign(tokenPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_SECRET'),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        'JWT_REFRESH_TOKEN_EXPIRATION_MS',
+      )}ms`,
+    });
+    
+    user.refreshToken =  await bcryptjs.hash(refreshToken, 10)
+    await this.userRepo.save(user)
+
+    response.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      expires: expiresAccessToken,
+    });
+
+    response.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      expires: expiresRefreshToken,
+    });
     return user;
   }
 
@@ -56,6 +105,7 @@ export class AuthService {
 
     return { exId: user.extId, name: user.name };
   }
+  
 
   async register(dto: RegisterDto) {
     const user = await this.getExistingUser(dto.extId, dto.phone);
@@ -245,5 +295,32 @@ export class AuthService {
   // Stubbed—returns the raw password. Replace with your chosen mechanism.
   private async hashPassword(password: string): Promise<string> {
     return password;
+  }
+
+
+  async verifyUser(username: string, password: string) {
+    try {
+      const user = await this.userRepo.findOneBy({username:username});
+      const authenticated = user?.password === password
+      if (!authenticated) {
+        throw new UnauthorizedException();
+      }
+      return user;
+    } catch (err) {
+      throw new UnauthorizedException('Credentials are not valid');
+    }
+  }
+
+  async veryifyUserRefreshToken(refreshToken: string, userId: number) {
+    try {
+      const user = await this.userRepo.findOneBy({ id: +userId });
+      const authenticated = await compare(refreshToken, user?.refreshToken!);
+      if (!authenticated) {
+        throw new UnauthorizedException();
+      }
+      return user;
+    } catch (err) {
+      throw new UnauthorizedException('Refresh token is not valid.');
+    }
   }
 }

@@ -13,5 +13,6 @@ import { AgentTarget } from '../agent-target/entities/agent-target.entity';
   ],
   controllers: [UserController],
   providers: [UserService, ErpManager],
+  exports: [UserService]
 })
 export class UserModule {}

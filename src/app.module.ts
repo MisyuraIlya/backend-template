@@ -58,6 +58,8 @@ import { AdminModule } from './modules/admin/admin.module';
 import { CronModule } from './cron/cron.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DocumentModule } from './modules/document/document.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -153,6 +155,10 @@ import { DocumentModule } from './modules/document/document.module';
   providers: [
     AppService,
     ErpManager,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

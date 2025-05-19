@@ -50,6 +50,9 @@ export class User {
   @Column({ nullable: true })
   recovery: number;
 
+  @Column({ nullable: true })
+  refreshToken: string
+
   @OneToMany(() => History, (history) => history.user)
   histories: History[];
 
