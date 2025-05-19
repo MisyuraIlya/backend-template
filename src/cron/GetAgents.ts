@@ -1,72 +1,104 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
-import { InjectRepository } from "@nestjs/typeorm";
-import { ErpManager } from "src/erp/erp.manager";
-import { User } from "src/modules/user/entities/user.entity";
-import { UsersTypes } from "src/modules/user/enums/UsersTypes";
-import { In, Repository } from "typeorm";
+import { Injectable, Inject } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { LoggerService } from '@nestjs/common';
+
+import { ErpManager } from 'src/erp/erp.manager';
+import { User } from 'src/modules/user/entities/user.entity';
+import { UsersTypes } from 'src/modules/user/enums/UsersTypes';
 
 @Injectable()
 export class GetAgentService {
-    private readonly logger = new Logger(GetAgentService.name);
-    private isSyncing = false;
+  private isSyncing = false;
 
-    constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
-        private readonly erpManager: ErpManager,
-    ){}
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
-    public async sync(): Promise<void> {
-        const agents = await this.erpManager.GetAgents();
-        if (!Array.isArray(agents) || agents.length === 0) {
-            this.logger.warn('No users returned from ERP');
-            return;
-        }
+    private readonly erpManager: ErpManager,
 
-        for (const dto of agents) {
-            let agent = await this.userRepository.findOne({
-                where: {
-                    extId: dto.userExId,
-                    role: In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]),
-                },
-            })
-            if(!agent){
-               agent = new User()
-               agent.extId = dto.userExId 
-               agent.createdAt = new Date();
-               agent.isRegistered = false
-               agent.role = UsersTypes.AGENT
-            }
-            agent.isAgent = true;
-            agent.isBlocked = dto.isBlocked ?? false;
-            agent.name = dto.name!;
-            agent.search = `${dto.userExId} ${dto.name}`;
-            agent.updatedAt = new Date();
-            agent.isAllowOrder = true;
-            this.userRepository.save(agent)
-        }
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
+  ) {}
+
+  private async sync(): Promise<void> {
+    const agents = await this.erpManager.GetAgents();
+    if (!Array.isArray(agents) || agents.length === 0) {
+      this.logger.warn({
+        context: 'CRON_AGENTS',
+        level: 'warn',
+        message: 'No users returned from ERP',
+        CRON_SUCCEEDED: false,
+      });
+      return;
     }
 
-    // @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
-    public async handleCron() {
-        if (this.isSyncing) {
-            this.logger.log('Previous sync still running — skipping this tick');
-            return;
-        }
-        this.isSyncing = true;
-        this.logger.log('Cron job: starting ERP agent sync');
+    for (const dto of agents) {
+      let agent = await this.userRepository.findOne({
+        where: {
+          extId: dto.userExId,
+          role: In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]),
+        },
+      });
 
-        try {
-            await this.sync();
-            this.logger.log('Cron job: ERP agent sync completed successfully');
-        } catch (error) {
-            this.logger.error(
-                'Cron job: ERP agent sync failed',
-                (error as Error).stack,
-            );
-        } finally {
-            this.isSyncing = false;
-        }
+      if (!agent) {
+        agent = new User();
+        agent.extId = dto.userExId;
+        agent.createdAt = new Date();
+        agent.isRegistered = false;
+        agent.role = UsersTypes.AGENT;
+      }
+
+      agent.isAgent = true;
+      agent.isBlocked = dto.isBlocked ?? false;
+      agent.name = dto.name!;
+      agent.search = `${dto.userExId} ${dto.name}`;
+      agent.updatedAt = new Date();
+      agent.isAllowOrder = true;
+
+      await this.userRepository.save(agent);
     }
+  }
+
+//   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
+  public async handleCron(): Promise<void> {
+    if (this.isSyncing) {
+      this.logger.log({
+        context: 'CRON_AGENTS',
+        level: 'info',
+        message: 'Previous sync still running — skipping this tick',
+        CRON_SUCCEEDED: false,
+      });
+      return;
+    }
+
+    this.isSyncing = true;
+    const start = Date.now();
+
+    try {
+      await this.sync();
+
+      const durationMs = Date.now() - start;
+      this.logger.log({
+        context: 'CRON_AGENTS',
+        level: 'info',
+        message: 'Cron job: ERP agent sync completed successfully',
+        CRON_SUCCEEDED: true,
+        durationMs,
+      });
+    } catch (err) {
+      const durationMs = Date.now() - start;
+      this.logger.error({
+        context: 'CRON_AGENTS',
+        message: 'Cron job: ERP agent sync failed',
+        CRON_SUCCEEDED: false,
+        durationMs,
+        stack: (err as Error).stack,
+      });
+    } finally {
+      this.isSyncing = false;
+    }
+  }
 }

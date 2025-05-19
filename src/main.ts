@@ -5,6 +5,7 @@ import { join } from 'path';
 import * as cookieParser from 'cookie-parser';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { RequestMethod } from '@nestjs/common';
+import { LoggingInterceptor } from './common/logger/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

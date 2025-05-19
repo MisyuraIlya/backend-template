@@ -1,36 +1,46 @@
 import {
-    Injectable,
-    NestInterceptor,
-    ExecutionContext,
-    CallHandler,
-  } from '@nestjs/common';
-  import { Observable } from 'rxjs';
-  import { tap } from 'rxjs/operators';
-  import { AppLogger } from './logger.service';
-  
-  @Injectable()
-  export class LoggingInterceptor implements NestInterceptor {
-    constructor(private readonly logger: AppLogger) {}
-  
-    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-      const req = context.switchToHttp().getRequest();
-      const { method, url, body, params, query } = req;
-      const now = Date.now();
-  
-      this.logger.log(
-        `[Request] ${method} ${url} - Body: ${JSON.stringify(body)} - Params: ${JSON.stringify(params)} - Query: ${JSON.stringify(query)}`
-      );
-  
-      return next.handle().pipe(
-        tap((data) => {
-          const res = context.switchToHttp().getResponse();
-          const { statusCode } = res;
-          const responseTime = Date.now() - now;
-          this.logger.log(
-            `[Response] ${method} ${url} ${statusCode} - ${responseTime}ms - Response: ${JSON.stringify(data)}`
-          );
-        }),
-      );
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  LoggerService,
+  Inject,
+} from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { v4 as uuid } from 'uuid';
+import { Request } from 'express';
+
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  constructor(
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
+  ) {}
+
+  intercept(ctx: ExecutionContext, next: CallHandler): Observable<any> {
+    const req = ctx.switchToHttp().getRequest<Request>();
+    
+    if (req.url === '/metrics' || req.url.startsWith('/metrics/')) {
+      return next.handle();
     }
+
+    const start = Date.now();
+    const requestId = uuid();
+    req.headers['x-request-id'] = requestId;
+
+    return next.handle().pipe(
+      tap(() => {
+        const durationMs = Date.now() - start;
+        this.logger.log({
+          level:    'info',
+          context:  'HTTP',
+          message:  `${req.method} ${req.url}`,
+          requestId,
+          durationMs,
+        });
+      }),
+    );
   }
-  
+}

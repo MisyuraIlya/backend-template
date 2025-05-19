@@ -58,10 +58,11 @@ import { AdminModule } from './modules/admin/admin.module';
 import { CronModule } from './cron/cron.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DocumentModule } from './modules/document/document.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { LoggerModule } from './common/logger/logger.module';
+import { LoggingInterceptor } from './common/logger/logging.interceptor';
 
 @Module({
   imports: [
@@ -158,9 +159,14 @@ import { LoggerModule } from './common/logger/logger.module';
   providers: [
     AppService,
     ErpManager,
+    LoggingInterceptor,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
     },
   ],
 })
