@@ -60,6 +60,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DocumentModule } from './modules/document/document.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { LoggerModule } from './common/logger/logger.module';
 
 @Module({
   imports: [
@@ -70,7 +72,6 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     TypeOrmModule.forRootAsync({
       useFactory: async () => ({
         type: 'mysql',
-
         host: process.env.DB_HOST,
         port: parseInt(process.env.DB_PORT!, 10) || 3306,
         username: process.env.DB_USER,
@@ -121,6 +122,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
         },
       }),
     }),
+    PrometheusModule.register(),
     TypeOrmModule.forFeature([User]),
     ScheduleModule.forRoot(),
     ProductModule,
@@ -149,7 +151,8 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     AdminModule,
     CronModule,
     AuthModule,
-    DocumentModule
+    DocumentModule,
+    LoggerModule
   ],
   controllers: [AppController],
   providers: [
