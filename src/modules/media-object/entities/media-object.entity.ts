@@ -34,7 +34,7 @@ export class MediaObject {
   @OneToMany(() => Notification, (notification) => notification.mediaObject)
   notifications: Notification[];
 
-  @OneToMany(() => HomeMedia, (homeMedia) => homeMedia.media)
+  @OneToMany(() => HomeMedia, (homeMedia) => homeMedia.mediaObject)
   homeMedia: HomeMedia[];
 
   @CreateDateColumn()

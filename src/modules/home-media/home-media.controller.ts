@@ -12,6 +12,13 @@ import { HomeMedia } from './entities/home-media.entity';
       primary: true,
     },
   },
+  query: {
+    join: {
+      mediaObject: {
+        eager: true,
+      },
+    },
+  },
 })
 @Controller('home-media')
 export class HomeMediaController implements CrudController<HomeMedia> {

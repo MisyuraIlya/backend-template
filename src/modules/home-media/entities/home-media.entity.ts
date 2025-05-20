@@ -10,7 +10,7 @@ export class HomeMedia {
   id: number;
 
   @ManyToOne(() => MediaObject, (media) => media.homeMedia, { cascade: true })
-  media: MediaObject;
+  mediaObject: MediaObject;
 
   @ManyToOne(() => HomeEdit, (homeEdit) => homeEdit.homeMedia)
   home: HomeEdit;

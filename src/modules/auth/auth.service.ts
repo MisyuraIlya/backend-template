@@ -76,18 +76,21 @@ export class AuthService {
     
     user.refreshToken =  await bcryptjs.hash(refreshToken, 10)
     await this.userRepo.save(user)
-
+    const isProd = this.configService.get('NODE_ENV') === 'production';
     response.cookie('Authentication', accessToken, {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
+      secure: isProd,                  
+      sameSite: isProd ? 'none' : 'lax',
       expires: expiresAccessToken,
     });
 
     response.cookie('Refresh', refreshToken, {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       expires: expiresRefreshToken,
     });
+
     return user;
   }
 
