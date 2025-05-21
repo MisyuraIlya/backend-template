@@ -299,7 +299,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         documentsType: string,
         pageSize: number,
         currentPage: number,
-        userExtId?: string,
+        userExtId?: string | null,
         search?: string
       ): Promise<DocumentsDto> {
         const requestData: any = {

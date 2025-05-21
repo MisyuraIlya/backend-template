@@ -637,7 +637,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       documentsType: string,
       size: number,
       page: number,
-      userExId?: string,
+      userExId?: string | null,
       search?: string,
     ): Promise<DocumentsDto> {
       const skip = (page - 1) * size;

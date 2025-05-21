@@ -9,6 +9,7 @@ import { DocumentDto, DocumentsDto } from 'src/erp/dto/documents.dto';
 import { DocumentItemDto, DocumentItemFileDto, DocumentItemsDto } from 'src/erp/dto/documentItems.dto';
 import { CartItem } from '../history/dto/create-order.dto';
 import { CartCheckDto } from './dto/cart-check.dto';
+import { UsersTypes } from '../user/enums/UsersTypes';
 
 @Injectable()
 export class DocumentService {
@@ -34,69 +35,99 @@ export class DocumentService {
     userId: number | null,
   ): Promise<DocumentsDto> {
     if (userId === null) {
-      throw new NotFoundException(`Must supply userId when fetching local history`);
+      throw new NotFoundException(
+        `Must supply userId when fetching local history`,
+      );
     }
+
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
-  
-    // only these types come from local history:
+
     if (this.HISTORY_TYPES.includes(documentType.toLowerCase())) {
       const qb = this.historyRepository
         .createQueryBuilder('h')
         .leftJoinAndSelect('h.user', 'user')
         .leftJoinAndSelect('h.agent', 'agent')
         .leftJoinAndSelect('h.agentApproved', 'agentApproved')
-        .where('h.createdAt BETWEEN :from AND :to', { from: dateFrom, to: dateTo })
-        .andWhere('user.id = :uid', { uid: userId });
-  
-      // **only** filter by documentType if it's *not* the special "history" wildcard**
+        .where('h.createdAt BETWEEN :from AND :to', { from: dateFrom, to: dateTo });
+
+      if (![
+        UsersTypes.AGENT,
+        UsersTypes.ADMIN,
+        UsersTypes.SUPER_AGENT,
+      ].includes(user.role)) {
+        qb.andWhere('user.id = :uid', { uid: userId });
+      }
+
       if (documentType.toLowerCase() !== 'history') {
         qb.andWhere('h.documentType = :type', { type: documentType });
       }
-  
+
       const [records, total] = await qb
         .orderBy('h.createdAt', 'DESC')
         .skip((page - 1) * this.PAGE_SIZE)
         .take(this.PAGE_SIZE)
         .getManyAndCount();
-  
+
       const documents: DocumentDto[] = records.map(h => ({
-        id:            h.id.toString(),
-        documentNumber:h.orderExtId,
-        documentType:  h.documentType,
-        userName:      h.user?.name,
-        userExId:      h.user?.extId,
-        agentExId:     h.agent?.extId,
-        agentName:     h.agent?.name,
-        status:        h.orderStatus?.toString(),
-        createdAt:     h.createdAt.toISOString(),
-        updatedAt:     h.updatedAt.toISOString(),
-        dueDateAt:     h.deliveryDate,
-        total:         h.total,
-        user:          h.user,
-        error:         h.error ?? null,
+        id:             h.id.toString(),
+        documentNumber: h.orderExtId,
+        documentType:   h.documentType,
+        userName:       h.user?.name,
+        userExId:       h.user?.extId,
+        agentExId:      h.agent?.extId,
+        agentName:      h.agent?.name,
+        status:         h.orderStatus?.toString(),
+        createdAt:      h.createdAt.toISOString(),
+        updatedAt:      h.updatedAt.toISOString(),
+        dueDateAt:      h.deliveryDate,
+        total:          h.total,
+        user:           h.user,
+        error:          h.error ?? null,
       }));
-  
+
       return {
         documents,
         total,
         pageCount: Math.ceil(total / this.PAGE_SIZE),
         page,
-        size: this.PAGE_SIZE,
+        size:      this.PAGE_SIZE,
       };
     }
-  
-    // otherwise, go to ERP
-    return this.erpManager.GetDocuments(
+
+    const extIdToSend: string | null = [
+      UsersTypes.AGENT,
+      UsersTypes.ADMIN,
+      UsersTypes.SUPER_AGENT,
+    ].includes(user.role)
+      ? null
+      : user.extId;
+
+    const response = await this.erpManager.GetDocuments(
       dateFrom,
       dateTo,
       documentType,
       this.PAGE_SIZE,
       page,
-      user.extId,
+      extIdToSend,
     );
+
+    if (response?.documents) {
+      await Promise.all(
+        response.documents.map(async element => {
+          if (!element.userExId) return;
+
+          const user = await this.userRepository.findOneBy({ extId: element.userExId });
+          if (user) {
+            element.user = user;
+          }
+        }),
+      );
+    }
+
+    return response;
   }
 
   async getDocumentItems(

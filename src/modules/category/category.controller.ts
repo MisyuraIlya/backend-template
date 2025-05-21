@@ -37,4 +37,9 @@ export class CategoryController implements CrudController<Category> {
     return this.service.getAdminCategory(categoryLvl1, categoryLvl2);
   }
 
+  @Post('drag-and-drop')
+  async reorder(@Body() dto: Category[]) {
+    return this.service.reorderCategories(dto);
+  }
+
 }

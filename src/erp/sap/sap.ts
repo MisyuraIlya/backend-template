@@ -184,7 +184,7 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       }));
     }
   
-    async GetDocuments(dateFrom: Date, dateTo: Date, documentsType: string, pageSize: number, currentPage: number, userExId?: string, search?: string): Promise<DocumentsDto> {
+    async GetDocuments(dateFrom: Date, dateTo: Date, documentsType: string, pageSize: number, currentPage: number, userExId?: string | null, search?: string): Promise<DocumentsDto> {
       const endpoint = `/${documentsType}`;
       const skip = (currentPage - 1) * pageSize;
       const filter = `DocDate ge ${dateFrom.toISOString()} and DocDate le ${dateTo.toISOString()}`;

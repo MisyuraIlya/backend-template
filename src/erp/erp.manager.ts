@@ -100,7 +100,6 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         return this.erp.GetAgents();
     }
 
-    // OnlineInterface methods
     public async SendOrder(history: any): Promise<string> {
         return this.erp.SendOrder(history) ?? '';
     }
@@ -115,7 +114,7 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         documentsType: string, 
         pageSize: number, 
         currentPage: number, 
-        userExtId?: string, 
+        userExtId?: string | null, 
         search?: string
     ): Promise<DocumentsDto> {
         return this.erp.GetDocuments(dateFrom, dateTo, documentsType, pageSize, currentPage, userExtId, search);

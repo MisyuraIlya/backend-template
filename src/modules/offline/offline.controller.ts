@@ -1,34 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { OfflineService } from './offline.service';
-import { CreateOfflineDto } from './dto/create-offline.dto';
-import { UpdateOfflineDto } from './dto/update-offline.dto';
+import { User } from '../user/entities/user.entity';
+import { Category } from '../category/entities/category.entity';
+import { Product } from '../product/entities/product.entity';
+import { AttributeMain } from '../attribute-main/entities/attribute-main.entity';
+import { ProductAttribute } from '../product-attribute/entities/product-attribute.entity';
+import { AttributeSub } from '../attribute-sub/entities/attribute-sub.entity';
 
 @Controller('offline')
 export class OfflineController {
   constructor(private readonly offlineService: OfflineService) {}
 
-  @Post()
-  create(@Body() createOfflineDto: CreateOfflineDto) {
-    return this.offlineService.create(createOfflineDto);
+  @Get('export/user')
+  async getOfflineUsers(): Promise<User[]> {
+    return this.offlineService.getOfflineUsers();
   }
 
-  @Get()
-  findAll() {
-    return this.offlineService.findAll();
+  @Get('export/category')
+  async getOfflineCategories(): Promise<Category[]> {
+    return this.offlineService.getOfflineCategories();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.offlineService.findOne(+id);
+  @Get('export/product')
+  async getOfflineProducts(): Promise<Product[]> {
+    return this.offlineService.getOfflineProducts();
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOfflineDto: UpdateOfflineDto) {
-    return this.offlineService.update(+id, updateOfflineDto);
+  @Get('export/attribute-main')
+  async getOfflineAttributeMain(): Promise<AttributeMain[]> {
+    return this.offlineService.getOfflineAttributeMain();
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.offlineService.remove(+id);
+  @Get('export/attribute-sub')
+  async getOfflineAttributeSub(): Promise<AttributeSub[]> {
+    return this.offlineService.getOfflineAttributeSub();
+  }
+
+  @Get('export/product-attribute')
+  async getOfflineProductAttribute(): Promise<ProductAttribute[]> {
+    return this.offlineService.getOfflineProductAttribute();
   }
 }

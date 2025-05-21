@@ -9,11 +9,15 @@ import { Product } from '../product/entities/product.entity';
 import { User } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { PurchaseStatus } from './enums/PurchaseStatus';
+import { SupportService } from '../support/support.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class HistoryService extends TypeOrmCrudService<History> {
   constructor(
     private readonly erpManager: ErpManager,
+    private readonly SupportService: SupportService,
+    private readonly notficiationService: NotificationService,
     @InjectRepository(History)
     private readonly historyRepository: Repository<History>,
     @InjectRepository(HistoryDetailed)
@@ -27,29 +31,24 @@ export class HistoryService extends TypeOrmCrudService<History> {
   }
 
   public async createOrder(dto: OrderRequest) {
-    // 1. find user
     const user = await this.userRepository.findOneBy({ id: dto.user.id });
     if (!user) {
       throw new NotFoundException(`user with id ${dto.user.id} not found`);
     }
 
-    // 2. find agent (optional)
     const agent = dto.agent?.id
       ? await this.userRepository.findOneBy({ id: dto.agent.id })
       : null;
 
-    // 3. validate everything (throws BadRequestException on error)
     await this.handleValidation(dto, user, agent);
 
-    // 4. persist master record
     const history = await this.createHistory(dto, user, agent);
 
-    // 5. persist line items
     await this.createHistoryDetailed(history, dto.cart);
 
-    // 6. push to ERP and update status
     const orderNumber = await this.handleSendErp(history);
-
+    // this.SupportService.sendOrderEmail(history)
+    this.notficiationService.handleOrderNotification(history);
     return {
       status: true,
       data: orderNumber,
@@ -68,6 +67,11 @@ export class HistoryService extends TypeOrmCrudService<History> {
 
     if (!dto.deliveryDate) {
       throw new BadRequestException('לא נבחר יום הספקה');
+    }
+
+    const deliveryDate = new Date(dto.deliveryDate);
+    if (isNaN(deliveryDate.getTime())) {
+      throw new BadRequestException('תאריך הספקה לא תקין');
     }
 
     if (!Array.isArray(dto.cart) || dto.cart.length === 0) {

@@ -63,6 +63,8 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { LoggerModule } from './common/logger/logger.module';
 import { LoggingInterceptor } from './common/logger/logging.interceptor';
+import { SupportModule } from './modules/support/support.module';
+import { OfflineModule } from './modules/offline/offline.module';
 
 @Module({
   imports: [
@@ -153,17 +155,19 @@ import { LoggingInterceptor } from './common/logger/logging.interceptor';
     CronModule,
     AuthModule,
     DocumentModule,
-    LoggerModule
+    LoggerModule,
+    SupportModule,
+    OfflineModule
   ],
   controllers: [AppController],
   providers: [
     AppService,
     ErpManager,
     LoggingInterceptor,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard,
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

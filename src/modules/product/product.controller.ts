@@ -1,4 +1,4 @@
-import { Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Query, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Post, Query, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { Crud, CrudController } from '@dataui/crud';
 import { Product } from './entities/product.entity';
@@ -6,6 +6,7 @@ import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
 import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
 import { StockHandler } from 'src/common/decorators/stock-handler.decorator';
 import { PriceHandler } from 'src/common/decorators/price-handler.decorator';
+import { ReorderItemDto } from './dto/reorder.dto';
 
 @Crud({
   model: { type: Product },
@@ -84,6 +85,14 @@ export class ProductController implements CrudController<Product> {
     @Param('productId') productId: string,
   ) {
     return this.service.warehouseDetailed(+productId)
+  }
+
+  @Post('drag-and-drop')
+  async reorder(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    dto: ReorderItemDto[],
+  ) {
+    return this.service.reorder(dto);
   }
 
 

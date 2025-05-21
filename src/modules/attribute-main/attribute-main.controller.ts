@@ -9,6 +9,7 @@ import { AttributeMain } from './entities/attribute-main.entity';
     id: { field: 'id', type: 'number', primary: true },
   },
   query: {
+    sort: [{ field: 'orden', order: 'ASC' }],
     join: {
       SubAttributes: {
         eager: true,
@@ -19,5 +20,12 @@ import { AttributeMain } from './entities/attribute-main.entity';
 @Controller('attribute-main')
 export class AttributeMainController implements CrudController<AttributeMain>{
   constructor(public readonly service: AttributeMainService) {}
+
+  @Post('drag-and-drop')
+  async dragAndDrop(
+    @Body() items: { id: number; orden: number }[]
+  ): Promise<AttributeMain[]> {
+    return this.service.updateOrder(items);
+  }
 
 }

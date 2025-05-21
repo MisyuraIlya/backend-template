@@ -11,7 +11,7 @@ export class PriorityDocumentsService {
   private buildFilter(
     dateFrom: Date,
     dateTo: Date,
-    userExtId?: string,
+    userExtId?: string | null | undefined,
     dateField: string = 'CURDATE',
   ): string {
     const clauses = [
@@ -28,7 +28,7 @@ export class PriorityDocumentsService {
     table: string,
     dateFrom: Date,
     dateTo: Date,
-    userExtId?: string,
+    userExtId?: string | null | undefined,
     dateField: string = 'CURDATE',
   ): Promise<number> {
     const clauses = [
@@ -54,7 +54,7 @@ export class PriorityDocumentsService {
   }
 
   async getOrders(
-    userExtId: string | undefined,
+    userExtId: string | undefined | null,
     dateFrom: Date,
     dateTo: Date,
     skip = 0,
@@ -88,7 +88,7 @@ export class PriorityDocumentsService {
   }
 
   async getPriceOffers(
-    userExtId: string | undefined,
+    userExtId: string | undefined | null,
     dateFrom: Date,
     dateTo: Date,
     skip = 0,
@@ -122,7 +122,7 @@ export class PriorityDocumentsService {
   }
 
   async getDeliveryOrders(
-    userExtId: string | undefined,
+    userExtId: string | undefined | null,
     dateFrom: Date,
     dateTo: Date,
     skip = 0,
@@ -156,7 +156,7 @@ export class PriorityDocumentsService {
   }
 
   async getAiInvoices(
-    userExtId: string | undefined,
+    userExtId: string | undefined | null,
     dateFrom: Date,
     dateTo: Date,
     skip = 0,
@@ -190,7 +190,7 @@ export class PriorityDocumentsService {
   }
 
   async getCiInvoices(
-    userExtId: string | undefined,
+    userExtId: string | undefined | null,
     dateFrom: Date,
     dateTo: Date,
     skip = 0,
@@ -224,7 +224,7 @@ export class PriorityDocumentsService {
   }
 
   async getReturnDocs(
-    userExtId: string | undefined,
+    userExtId: string | undefined | null,
     dateFrom: Date,
     dateTo: Date,
     skip = 0,

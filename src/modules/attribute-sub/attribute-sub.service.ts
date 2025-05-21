@@ -11,4 +11,10 @@ export class AttributeSubService extends TypeOrmCrudService<AttributeSub> {
   ) {
     super(repo);
   }
+
+  async dragAndDrop(items: AttributeSub[]): Promise<AttributeSub[]> {
+    const toSave = items.map(i => ({ id: i.id, orden: i.orden }));
+    await this.repo.save(toSave);
+    return this.repo.find({ order: { orden: 'ASC' } });
+  }
 }

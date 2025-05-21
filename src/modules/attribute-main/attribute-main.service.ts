@@ -11,4 +11,17 @@ export class AttributeMainService extends TypeOrmCrudService<AttributeMain> {
   ) {
     super(repo);
   }
+
+  async updateOrder(
+    items: { id: number; orden: number }[],
+  ): Promise<AttributeMain[]> {
+    // create partial entities for upsert
+    const toSave = items.map(i =>
+      this.repo.create({ id: i.id, orden: i.orden }),
+    );
+    await this.repo.save(toSave);
+
+    // return fresh list, ordered by orden ASC
+    return this.repo.find({ order: { orden: 'ASC' } });
+  }
 }

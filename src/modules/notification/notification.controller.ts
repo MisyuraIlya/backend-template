@@ -1,9 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Crud, CrudController } from '@dataui/crud';
 import { Notification } from './entities/notification.entity';
+import { CreateNotificationDto } from './dto/create-notification.dto';
 
 @Crud({
   model: { type: Notification },
@@ -19,5 +18,9 @@ import { Notification } from './entities/notification.entity';
 export class NotificationController implements CrudController<Notification> {
   constructor(public readonly service: NotificationService) {}
 
+  @Post('send-notification')
+  async findDebit(@Body() dto: CreateNotificationDto) {
+    return this.service.sendNotification(dto)
+  }
 
 }

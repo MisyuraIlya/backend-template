@@ -76,6 +76,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
       );
     }
 
+    qb.orderBy('p.orden', 'ASC');
     qb.skip((page - 1) * limit).take(limit);
 
     const [products, total] = await qb.getManyAndCount();
@@ -125,6 +126,8 @@ export class ProductService extends TypeOrmCrudService<Product> {
     if (filterLevel && filterId) {
       qb.andWhere(`p.category_lvl${filterLevel}_id = :id`, { id: filterId });
     }
+    qb.orderBy('p.orden', 'ASC');
+
     qb.orderBy('p.orden', 'ASC');
 
     return qb.getMany();
@@ -184,5 +187,24 @@ export class ProductService extends TypeOrmCrudService<Product> {
     }
 
     return this.erpManager.GetWarehouseDetailedBySku(product.sku)
+  }
+
+  async reorder(items: { id?: number; orden: number }[]): Promise<Product[]> {
+    const toUpdate = items.filter(item => typeof item.id === 'number');
+
+    await Promise.all(
+      toUpdate.map(item =>
+        this.repo
+          .createQueryBuilder()
+          .update(Product)
+          .set({ orden: item.orden })
+          .where('id = :id', { id: item.id })
+          .execute(),
+      ),
+    );
+
+    return this.repo.find({
+      order: { orden: 'ASC' },
+    });
   }
 }

@@ -11,4 +11,12 @@ export class HomeEditService extends TypeOrmCrudService<HomeEdit> {
   ) {
     super(repo);
   }
+
+  async updateOrder(items: HomeEdit[]): Promise<HomeEdit[]> {
+    for (const { id, orden } of items) {
+      await this.repo.update(id, { orden });
+    }
+    return this.repo.find({ order: { orden: 'ASC' } });
+  }
+
 }

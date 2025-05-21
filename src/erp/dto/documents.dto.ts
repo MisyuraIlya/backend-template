@@ -1,3 +1,5 @@
+import { User } from "src/modules/user/entities/user.entity";
+
 export interface DocumentDto {
   id?: string;
   documentNumber?: string;
@@ -11,7 +13,7 @@ export interface DocumentDto {
   updatedAt?: string;
   dueDateAt?: Date;
   total?: number;
-  user?: any; 
+  user?: User; 
   error?: string | null;
 }
 

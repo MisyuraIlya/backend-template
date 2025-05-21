@@ -13,14 +13,16 @@ export class CategoryService extends TypeOrmCrudService<Category>  {
   }
 
   async getCategoriesApp(): Promise<Category[]> {
-    return this.repo.find({
-      where: { lvlNumber: 1 },
-      relations: [
-        'categories',              
-        'categories.categories',  
-        'mediaObject'
-      ],
-    });
+    return this.repo
+      .createQueryBuilder('cat')
+      .where('cat.lvlNumber = :lvl', { lvl: 1 })
+      .leftJoinAndSelect('cat.categories', 'lvl2')
+      .leftJoinAndSelect('lvl2.categories', 'lvl3')
+      .leftJoinAndSelect('cat.mediaObject', 'media')
+      .orderBy('cat.orden', 'ASC')
+      .addOrderBy('lvl2.orden', 'ASC')
+      .addOrderBy('lvl3.orden', 'ASC')
+      .getMany();
   }
 
   async getAdminCategory(
@@ -35,6 +37,17 @@ export class CategoryService extends TypeOrmCrudService<Category>  {
       where: { parent: { id: lookupParentId } },
       relations: ['parent', 'categories','mediaObject'],    
       order: { orden: 'ASC' },
+    });
+  }
+
+  async reorderCategories(
+    items: Category[],
+  ): Promise<Category[]> {
+    const toSave = items.map(({ id, orden }) => ({ id, orden }));
+    await this.repo.save(toSave);
+    return this.repo.find({
+      order: { orden: 'ASC' },
+      relations: ['parent', 'categories', 'mediaObject'],
     });
   }
 }

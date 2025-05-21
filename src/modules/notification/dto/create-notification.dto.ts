@@ -1,1 +1,4 @@
-export class CreateNotificationDto {}
+export class CreateNotificationDto {
+    notificationId: number
+    who: "allAgents" | "allUsers"
+}

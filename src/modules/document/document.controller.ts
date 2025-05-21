@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, UseInterceptors } from '@nestjs/common';
 import { DocumentService } from './document.service';
 import { CartCheckDto } from './dto/cart-check.dto';
 import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
