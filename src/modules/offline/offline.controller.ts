@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseInterceptors } from '@nestjs/common';
 import { OfflineService } from './offline.service';
 import { User } from '../user/entities/user.entity';
 import { Category } from '../category/entities/category.entity';
@@ -6,8 +6,13 @@ import { Product } from '../product/entities/product.entity';
 import { AttributeMain } from '../attribute-main/entities/attribute-main.entity';
 import { ProductAttribute } from '../product-attribute/entities/product-attribute.entity';
 import { AttributeSub } from '../attribute-sub/entities/attribute-sub.entity';
+import { CreateOfflineDto } from './dto/create-offline.dto';
+import { StockHandler } from 'src/common/decorators/stock-handler.decorator';
+import { PriceHandler } from 'src/common/decorators/price-handler.decorator';
+import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
 
 @Controller('offline')
+@UseInterceptors(PriceInterceptor)
 export class OfflineController {
   constructor(private readonly offlineService: OfflineService) {}
 
@@ -40,4 +45,18 @@ export class OfflineController {
   async getOfflineProductAttribute(): Promise<ProductAttribute[]> {
     return this.offlineService.getOfflineProductAttribute();
   }
+
+  @Post('handlePrice')
+  @StockHandler()
+  @PriceHandler()
+  async handlePrice(@Body() dto: CreateOfflineDto) {
+    return this.offlineService.handlePrice(dto)
+  }
+
+  @Post('sendOrder') 
+  async sendOrder(@Body() dto: CreateOfflineDto) {
+
+  }
+
+
 }

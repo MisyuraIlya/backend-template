@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../product/entities/product.entity';
@@ -8,14 +8,16 @@ import { AttributeSub } from '../attribute-sub/entities/attribute-sub.entity';
 import { Category } from '../category/entities/category.entity';
 import { ProductAttribute } from '../product-attribute/entities/product-attribute.entity';
 import { CategoryService } from '../category/category.service';
+import { CreateOfflineDto } from './dto/create-offline.dto';
+import { ErpManager } from 'src/erp/erp.manager';
+import { CartItem } from '../history/dto/create-order.dto';
 
 @Injectable()
 export class OfflineService {
   constructor(
+    private readonly erpManager: ErpManager,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(AttributeMain)
     private readonly attributeMainRepo: Repository<AttributeMain>,
     @InjectRepository(AttributeSub)
@@ -36,11 +38,24 @@ export class OfflineService {
   }
 
   async getOfflineProducts(): Promise<Product[]> {
-    return this.productRepo.find();
+    return this.productRepo.find({
+      relations: [
+        'categoryLvl1',
+        'categoryLvl2',
+        'categoryLvl3',
+        'productAttributes',
+        'productAttributes.attributeSub',
+        'productAttributes.attributeSub.attribute'
+      ],
+    });
   }
 
   async getOfflineAttributeMain(): Promise<AttributeMain[]> {
-    return this.attributeMainRepo.find();
+    return this.attributeMainRepo.find({
+      relations: [
+        'SubAttributes',
+      ],
+    });
   }
 
   async getOfflineAttributeSub(): Promise<AttributeSub[]> {
@@ -48,6 +63,42 @@ export class OfflineService {
   }
 
   async getOfflineProductAttribute(): Promise<ProductAttribute[]> {
-    return this.productAttributeRepo.find();
+    return this.productAttributeRepo.find({
+      relations: [
+        'product',
+        'attributeSub'
+      ],
+    });
+  }
+
+  async handlePrice(dto: CreateOfflineDto): Promise<CartItem[]> {
+    const user = await this.userRepository.findOne({ where: { id: +dto.history.id! } })
+ 
+    const itemsDto = Array.isArray(dto.historyDetailed)
+      ? dto.historyDetailed
+      : [dto.historyDetailed];
+
+    const cartItems: CartItem[] = [];
+    for (const itemDto of itemsDto) {
+      const product = await this.productRepo.findOne({
+        where: { sku: itemDto.sku },
+      });
+      if (!product) {
+        throw new NotFoundException(`Product with SKU ${itemDto.sku} not found`);
+      }
+      cartItems.push({
+        sku: itemDto.sku,
+        quantity: itemDto.quantity,
+        product,
+        stock: 0,
+        price: 0,
+        discount: 0,
+        isBonus: false,
+        comment: itemDto.comment ?? '',
+        total: 0,
+        choosedPackQuantity: product.packQuantity ?? 1,
+      });
+    }
+    return cartItems;
   }
 }

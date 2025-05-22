@@ -12,9 +12,12 @@ export interface DocumentDto {
   createdAt?: string;
   updatedAt?: string;
   dueDateAt?: Date;
+  deliveryAt?: Date;
   total?: number;
   user?: User; 
   error?: string | null;
+  tax?: number;
+  orderComment?: string
 }
 
 export interface DocumentsDto {

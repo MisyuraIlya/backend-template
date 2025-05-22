@@ -36,6 +36,9 @@ export class ProductService extends TypeOrmCrudService<Product> {
   ): Promise<CatalogResponse> {
     const qb = this.productRepo
       .createQueryBuilder('p')
+      .leftJoinAndSelect('p.categoryLvl1', 'cat1')
+      .leftJoinAndSelect('p.categoryLvl2', 'cat2')
+      .leftJoinAndSelect('p.categoryLvl3', 'cat3')
       .leftJoinAndSelect('p.productAttributes', 'pa')
       .leftJoinAndSelect('pa.attributeSub', 's')
       .leftJoinAndSelect('s.attribute', 'm')
