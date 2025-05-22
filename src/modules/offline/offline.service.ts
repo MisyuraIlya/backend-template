@@ -15,7 +15,6 @@ import { CartItem } from '../history/dto/create-order.dto';
 @Injectable()
 export class OfflineService {
   constructor(
-    private readonly erpManager: ErpManager,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     @InjectRepository(AttributeMain)
@@ -71,9 +70,11 @@ export class OfflineService {
     });
   }
 
-  async handlePrice(dto: CreateOfflineDto): Promise<CartItem[]> {
-    const user = await this.userRepository.findOne({ where: { id: +dto.history.id! } })
- 
+  async handlePrice(dto: CreateOfflineDto, userId: number): Promise<CartItem[]> {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if(!user){
+      throw new NotFoundException(`User with ${userId} not found`);
+    }
     const itemsDto = Array.isArray(dto.historyDetailed)
       ? dto.historyDetailed
       : [dto.historyDetailed];

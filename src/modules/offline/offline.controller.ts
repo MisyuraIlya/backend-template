@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, ParseIntPipe, Post, Query, UseInterceptors } from '@nestjs/common';
 import { OfflineService } from './offline.service';
 import { User } from '../user/entities/user.entity';
 import { Category } from '../category/entities/category.entity';
@@ -49,8 +49,11 @@ export class OfflineController {
   @Post('handlePrice')
   @StockHandler()
   @PriceHandler()
-  async handlePrice(@Body() dto: CreateOfflineDto) {
-    return this.offlineService.handlePrice(dto)
+  async handlePrice(
+    @Body() dto: CreateOfflineDto,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.offlineService.handlePrice(dto, userId);
   }
 
   @Post('sendOrder') 
