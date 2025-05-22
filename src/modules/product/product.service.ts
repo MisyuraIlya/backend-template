@@ -85,7 +85,6 @@ export class ProductService extends TypeOrmCrudService<Product> {
     const [products, total] = await qb.getManyAndCount();
     const pageCount = Math.ceil(total / limit);
 
-    await this.handleStock(products);
     const filtersDto = await this.buildFiltersFrom(products);
 
     return {
@@ -137,28 +136,40 @@ export class ProductService extends TypeOrmCrudService<Product> {
   }
 
   private async buildFiltersFrom(products: Product[]): Promise<AttributeMain[]> {
-    const subSet = new Set(
-      products.flatMap(p => p.productAttributes?.map(pa => pa.attributeSub.id) || [])
-    );
-    if (!subSet.size) return [];
-
+    const subCountMap = new Map<number, number>();
+    for (const p of products) {
+      // ensure we only count each product once per sub-attribute
+      const uniqueSubs = new Set(p.productAttributes?.map(pa => pa.attributeSub.id) || []);
+      for (const subId of uniqueSubs) {
+        subCountMap.set(subId, (subCountMap.get(subId) || 0) + 1);
+      }
+    }
+  
+    // if no filters apply, bail early
+    const subIds = Array.from(subCountMap.keys());
+    if (subIds.length === 0) {
+      return [];
+    }
+  
     const mains = await this.attributeMainRepo
       .createQueryBuilder('m')
       .leftJoinAndSelect('m.SubAttributes', 's')
       .where('m.isPublished = true')
       .andWhere('m.isInFilter = true')
-      .andWhere('s.id IN (:...ids)', { ids: Array.from(subSet) })
+      .andWhere('s.id IN (:...ids)', { ids: subIds })
       .orderBy('m.orden', 'ASC')
       .addOrderBy('s.orden', 'ASC')
       .getMany();
-    return mains
+  
+    for (const main of mains) {
+      for (const sub of main.SubAttributes) {
+        sub.productCount = subCountMap.get(sub.id) || 0;
+      }
+    }
+  
+    return mains;
   }
-
-  private async handleStock(products: Product[]) {
-    products?.forEach((item) => {
-      item.stock = 9999
-    })
-  }
+  
 
   public async purchaseHistory(userId: number, productId: number){
     const user = await this.userRepository.findOneBy({ id: userId });
