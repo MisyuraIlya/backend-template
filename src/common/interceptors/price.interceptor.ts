@@ -127,6 +127,9 @@ export class PriceInterceptor implements NestInterceptor {
 
   private async fetchPriceOnline(products: Product[]): Promise<Product[]> {
     const skus = products.map(p => p.sku);
+    if(skus.length === 0){
+      return products
+    }
     const priceLists = this.user?.priceListUsers.map(e => e.priceList.extId) ?? [];
     const response = await this.erpManager.GetPriceOnline(
       this.user?.extId!,

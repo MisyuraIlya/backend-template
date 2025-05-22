@@ -73,6 +73,9 @@ export class StockInterceptor implements NestInterceptor {
 
   private async handleStockOnline(products: Product[]) {
     const skus = products?.map((item) => item.sku)
+    if(skus.length === 0){
+      return products
+    }
     const response = await this.erpManager.GetStockOnline(skus)
     products?.forEach((item) => {
       const stock = response.find((x) => x.sku == item.sku)

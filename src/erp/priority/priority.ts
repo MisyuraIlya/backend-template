@@ -128,7 +128,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
 
         const qs = new URLSearchParams(params).toString();
         const url = `${endpoint}?${qs}`;
-
+        
         try {
           const raw = await this.GetRequest(url);
           return raw
@@ -210,16 +210,13 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             taxCode:         userRec.TAXCODE,
             agentCode:       userRec.AGENTCODE,
 
-            // These three were missing before:
             globalDiscount:  Number(userRec.GLOBAL_DISCOUNT ?? 0),
             isVatEnabled:    userRec.VATFLAG === 'Y',
             salesCurrency:   userRec.SALESCURRENCY ?? '',
 
-            // initialize, then fill below
             subUsers:        []
           };
 
-          // Expand sub‐users if present
           if (Array.isArray(userRec.CUSTPERSONNEL_SUBFORM)) {
             userDto.subUsers = userRec.CUSTPERSONNEL_SUBFORM.map((subRec: any) => ({
               userExId:        userRec.CUSTNAME,
@@ -1151,71 +1148,87 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
       const endpoint2 = "/CUSTOMERS";
       const now = new Date(date);
       const result: PriceDto[] = [];
-
+    
       const plFilter = Array.isArray(priceListNumber)
         ? priceListNumber.map(pl => `PLNAME eq '${pl}'`).join(" or ")
         : `PLNAME eq '${priceListNumber}'`;
-
+    
       const skuList = Array.isArray(sku) ? sku : [sku];
-      const skuFilter = skuList.map(s => `PARTNAME eq '${s}'`).join(" or ");
-
-      const expandName = "PARTPRICE2_SUBFORM";
-      const expandClause1 = `${expandName}(` +
-        `$select=PARTNAME,PRICE,PERCENT,VATPRICE;` +
-        `$filter=${skuFilter}` +
-      `)`;
-
+      const skuFilter = skuList.length
+        ? skuList.map(s => `PARTNAME eq '${s}'`).join(" or ")
+        : "";
+    
+      const partPriceSelect = "PARTNAME,PRICE,PERCENT,VATPRICE";
+      const expandPartsPL = [`$select=${partPriceSelect}`];
+      if (skuFilter) {
+        expandPartsPL.push(`$filter=${skuFilter}`);
+      }
+      const expandClause1 = `PARTPRICE2_SUBFORM(${expandPartsPL.join(";")})`;
+    
       const params1 = new URLSearchParams({
         "$filter": plFilter,
         "$select": "PLIST,PLNAME,PLDATE",
-        "$expand": expandClause1,
+        "$expand": expandClause1
       });
       const url1 = `${endpoint1}?${params1}`;
-
+    
+      const discSelect = "PARTNAME,PERCENT,FROMDATE,EXPIRYDATE";
+      const priceSelect = "PARTNAME,PRICE,VPRICE,FROMDATE,EXPIRYDATE";
+    
+      const discExpand = [
+        ...(skuFilter ? [`$filter=${skuFilter}`] : []),
+        `$select=${discSelect}`
+      ].join(";");
+      const priceExpand = [
+        ...(skuFilter ? [`$filter=${skuFilter}`] : []),
+        `$select=${priceSelect}`
+      ].join(";");
+    
+      const custExpands = [
+        `CUSTPARTDISC_SUBFORM(${discExpand})`,
+        `CUSTPARTPRICE_SUBFORM(${priceExpand})`,
+        `CUSTFAMILYDISC_SUBFORM`
+      ].join(",");
+    
       const params2 = new URLSearchParams({
         "$filter": `CUSTNAME eq '${userExtId}'`,
         "$select": "CUSTNAME",
-        "$expand": [
-          `CUSTPARTDISC_SUBFORM($filter=${skuFilter};$select=PARTNAME,PERCENT,FROMDATE,EXPIRYDATE)`,
-          `CUSTPARTPRICE_SUBFORM($filter=${skuFilter};$select=PARTNAME,PRICE,VPRICE,FROMDATE,EXPIRYDATE)`,
-          `CUSTFAMILYDISC_SUBFORM`
-        ].join(","),
+        "$expand": custExpands
       });
       const url2 = `${endpoint2}?${params2}`;
-
+    
       const skipPL = Array.isArray(priceListNumber) && priceListNumber.length === 0;
-
       const custPromise = this.GetRequest(url2);
-      let plPromise: Promise<any> | null = null;
+      let plPromise: Promise<any>[] = [];
       if (!skipPL) {
-        plPromise = this.GetRequest(url1);
+        plPromise.push(this.GetRequest(url1));
       }
-
+    
       let plResponse: any[] = [];
       let custResponse: any[] = [];
-
-      if (plPromise) {
-        [plResponse, custResponse] = await Promise.all([plPromise, custPromise]);
+    
+      if (plPromise.length) {
+        [plResponse, custResponse] = await Promise.all([plPromise[0], custPromise]);
       } else {
         custResponse = await custPromise;
       }
-
-      plResponse?.forEach(item => {
-        item.PARTPRICE2_SUBFORM?.forEach(item2 => {
+    
+      plResponse.forEach(item => {
+        item.PARTPRICE2_SUBFORM?.forEach(pp => {
           result.push({
-            sku: item2.PARTNAME,
+            sku: pp.PARTNAME,
             group: null,
             basePrice: null,
-            price: item2.PRICE,
-            discount: item2.PERCENT,
+            price: pp.PRICE,
+            discount: pp.PERCENT,
             priceAfterDiscount: null,
-            vatPrice: item2.VATPRICE,
-            vatAfterDiscount: null,
+            vatPrice: pp.VATPRICE,
+            vatAfterDiscount: null
           });
         });
       });
-
-      custResponse?.forEach(item => {
+    
+      custResponse.forEach(item => {
         item.CUSTPARTDISC_SUBFORM
           ?.filter(disc => {
             const from = new Date(disc.FROMDATE);
@@ -1231,10 +1244,10 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
               discount: disc.PERCENT,
               priceAfterDiscount: null,
               vatPrice: null,
-              vatAfterDiscount: null,
+              vatAfterDiscount: null
             });
           });
-
+    
         item.CUSTPARTPRICE_SUBFORM
           ?.filter(pr => {
             const from = new Date(pr.FROMDATE);
@@ -1250,10 +1263,10 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
               discount: null,
               priceAfterDiscount: null,
               vatPrice: pr.VPRICE,
-              vatAfterDiscount: null,
+              vatAfterDiscount: null
             });
           });
-
+    
         item.CUSTFAMILYDISC_SUBFORM?.forEach(fam => {
           result.push({
             sku: null,
@@ -1263,36 +1276,61 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             discount: fam.PERCENT,
             priceAfterDiscount: null,
             vatPrice: null,
-            vatAfterDiscount: null,
+            vatAfterDiscount: null
           });
         });
       });
-
+    
       return result;
     }
+    
 
 
-    async GetStockOnline(sku: string | string[], warehouse?: string): Promise<StockDto[]> {
+    async GetStockOnline(
+      sku: string | string[],
+      warehouse?: string
+    ): Promise<StockDto[]> {
+      const endpoint = "/LOGPART";
+    
       const skuList = Array.isArray(sku) ? sku : [sku];
-      const skuFilter = skuList.map(s => `PARTNAME eq '${s}'`).join(" or ");
-      const endpoint1 = "/LOGPART";
-      const queryParams1 = new URLSearchParams({
-        '$filter': `${skuFilter}`,
-        '$select': 'PARTNAME',
-        '$expand': 'LOGCOUNTERS_SUBFORM($select=BALANCE)',
-      });
-      const urlQuery = `${endpoint1}?${queryParams1.toString()}`;
-      const data = await this.GetRequest(urlQuery);
-      const result: StockDto[] = []
-      data?.forEach((item) => {
-        const obj: StockDto = {
+      const skuClauses = skuList.length
+        ? skuList.map(s => `PARTNAME eq '${s}'`)
+        : [];
+      const filterClauses: string[] = [];
+    
+      if (skuClauses.length) {
+        filterClauses.push(skuClauses.join(" or "));
+      }
+      if (warehouse) {
+        filterClauses.push(`WAREHOUSE eq '${warehouse}'`);
+      }
+    
+      const filterString = filterClauses.join(" and ");
+    
+      const params = new URLSearchParams();
+      if (filterString) {
+        params.set("$filter", filterString);
+      }
+      params.set("$select", "PARTNAME");
+      params.set(
+        "$expand",
+        "LOGCOUNTERS_SUBFORM($select=BALANCE)"
+      );
+    
+      const url = `${endpoint}?${params.toString()}`;
+    
+      const data = await this.GetRequest(url);
+      const result: StockDto[] = [];
+    
+      data?.forEach(item => {
+        result.push({
           sku: item.PARTNAME,
-          stock: item?.LOGCOUNTERS_SUBFORM[0]?.BALANCE,
-          warehouse: null
-        }
-        result.push(obj)
-      })
-      return result
+          stock: item.LOGCOUNTERS_SUBFORM?.[0]?.BALANCE,
+          warehouse: warehouse || null
+        });
+      });
+    
+      return result;
     }
 
     async ProductsImBuy(userExtId: string): Promise<string[]> {
@@ -1306,7 +1344,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         const url = `${endpoint}?${queryParams.toString()}`;
 
         try {
-            // Fetch data from the endpoint
             const response = await fetch(url);
             if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -1315,24 +1352,21 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
             const data = await response.json();
             const result: string[] = [];
 
-            // Iterate through the response and collect PARTNAME values
             for (const itemRec of data) {
             for (const subItem of itemRec.ORDERITEMS_SUBFORM) {
                 result.push(subItem.PARTNAME);
             }
             }
 
-            // Get unique PARTNAME values and return as an array
             return Array.from(new Set(result));
 
         } catch (error) {
             console.error('Error fetching products:', error);
-            throw error; // Re-throw the error for further handling or notification
+            throw error; 
         }
     }
 
     async ProductsImNotBuy(userExtId: string): Promise<string[]> {
-        // Implement the logic here
         return []
     }
 
@@ -1424,7 +1458,6 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
     }
 
     async GetPurchaseDelivery(string: string): Promise<PurchaseDeliveryItemDto[]> {
-        // Implement the logic here
         return []
     }
 
