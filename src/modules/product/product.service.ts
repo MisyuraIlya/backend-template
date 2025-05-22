@@ -138,14 +138,12 @@ export class ProductService extends TypeOrmCrudService<Product> {
   private async buildFiltersFrom(products: Product[]): Promise<AttributeMain[]> {
     const subCountMap = new Map<number, number>();
     for (const p of products) {
-      // ensure we only count each product once per sub-attribute
       const uniqueSubs = new Set(p.productAttributes?.map(pa => pa.attributeSub.id) || []);
       for (const subId of uniqueSubs) {
         subCountMap.set(subId, (subCountMap.get(subId) || 0) + 1);
       }
     }
   
-    // if no filters apply, bail early
     const subIds = Array.from(subCountMap.keys());
     if (subIds.length === 0) {
       return [];
