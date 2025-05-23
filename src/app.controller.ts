@@ -1,4 +1,3 @@
-// src/app.controller.ts
 import { Controller, Get, Inject, LoggerService } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Public } from './common/decorators/public.decorator';
@@ -16,7 +15,6 @@ export class AppController {
   @Public()
   getHello(): string {
     this.logger.log('IM LOGGERr', AppController.name);
-
     return this.appService.getHello();
   }
 
@@ -24,7 +22,6 @@ export class AppController {
   @Public()
   getHello2(): string {
     this.logger.error('IM ERROR', /* trace? */ '', AppController.name);
-
     return this.appService.getHello();
   }
 
@@ -32,8 +29,13 @@ export class AppController {
   @Public()
   getHello3(): string {
     this.logger.warn('IM WARN');
-
     return this.appService.getHello();
   }
 
+  @Get('healthcheck')
+  @Public()
+  healthCheck(): { status: string } {
+    this.logger.log('Health check OK', AppController.name);
+    return { status: 'ok' };
+  }
 }

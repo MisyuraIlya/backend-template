@@ -1,4 +1,3 @@
-# Dockerfile (in backend-app-template/)
 ################################################
 # 1) Builder: install deps & compile TS to JS  #
 ################################################
@@ -10,7 +9,7 @@ RUN npm install
 
 COPY . .
 RUN npm install -g @nestjs/cli
-RUN npm run build
+RUN npm run build     # outputs /usr/src/app/dist
 
 ################################################
 # 2) Development: run in watch mode            #
@@ -18,13 +17,10 @@ RUN npm run build
 FROM node:22 AS development
 WORKDIR /usr/src/app
 
-# copy only manifests, install full deps
 COPY package*.json ./
 RUN npm install
 
-# copy source for live edits
 COPY . .
-
 RUN npm install -g @nestjs/cli
 
 EXPOSE 3000
@@ -39,7 +35,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install --production
 
-COPY . .
+COPY --from=builder /usr/src/app/dist ./dist
 
 EXPOSE 3000
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main.js"]
