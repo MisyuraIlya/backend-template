@@ -1,4 +1,3 @@
-// main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
@@ -19,23 +18,33 @@ async function bootstrap() {
   });
 
   app.use(helmet());
-
   app.use(cookieParser());
 
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     process.env.BACKEND_URL,
+    'https://digi-dev.work',
   ];
+  const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
+  const isDev = process.env.NODE_ENV !== 'production';
+
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      if (isDev) {
+        if (!origin || localhostRegex.test(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error(`Dev mode: Origin ${origin} not allowed`));
       }
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
-    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
-    allowedHeaders: ['Content-Type','Authorization','Set-Cookie'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
     credentials: true,
   });
 
