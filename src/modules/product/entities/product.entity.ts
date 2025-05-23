@@ -39,6 +39,10 @@ export class Product {
   @IsString()
   title: string;
 
+  @Column({ type: 'varchar', length: 255, nullable:true })
+  @IsString()
+  search: string;
+
   @Column({
     type: 'varchar',
     length: 255,
