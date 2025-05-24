@@ -1,8 +1,9 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseInterceptors } from '@nestjs/common';
 import { HomeEditService } from './home-edit.service';
 import { HomeEdit } from './entities/home-edit.entity';
 import { Crud, CrudController } from '@dataui/crud';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @Crud({
   model: { type: HomeEdit },
@@ -25,6 +26,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 })
 @Public()
 @Controller('home-edit')
+@UseInterceptors(CacheInterceptor) 
 export class HomeEditController implements CrudController<HomeEdit>{
   constructor(public readonly service: HomeEditService) {}
 

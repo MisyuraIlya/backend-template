@@ -11,7 +11,7 @@ import { UsersTypes } from 'src/modules/user/enums/UsersTypes';
 
 @Injectable()
 export class GetAgentService {
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(User)

@@ -11,7 +11,7 @@ import { ProductDto } from "src/erp/dto/product.dto";
 export class GetCategoriesService {
   private readonly logger = new Logger(GetCategoriesService.name);
   private readonly PAGE_SIZE = 100;
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(Category)

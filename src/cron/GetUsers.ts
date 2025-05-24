@@ -10,7 +10,7 @@ import { UserDto } from 'src/erp/dto/user.dto';
 @Injectable()
 export class GetUsersService {
   private readonly logger = new Logger(GetUsersService.name);
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(User)

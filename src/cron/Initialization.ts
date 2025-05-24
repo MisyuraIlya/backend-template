@@ -25,9 +25,6 @@ export class InitializationService {
     const adminExtId = '48a147e2-29b5-46e1-928c-dbb8d9d2e207';
     let admin = await this.userRepository.findOne({ where: { extId: adminExtId } });
     if (!admin) {
-      const passwordPlain = '123456';
-      const hashed = await bcrypt.hash(passwordPlain, 10);
-
       admin = this.userRepository.create({
         name: 'admin',
         username: 'admin@gmail.com',
@@ -41,7 +38,7 @@ export class InitializationService {
         isAllowOrder: false,
         isAllowAllClients: false,
         recovery: Math.floor(100000 + Math.random() * 900000),
-        password: hashed,
+        password: '123456',
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -49,16 +46,12 @@ export class InitializationService {
       this.logger.log('Admin user initialized.');
     }
 
-    // Initialize Agent User
     const agentExtId = '2cca2cd6-2d37-4809-9520-cae76474113e';
     let agent = await this.userRepository.findOne({ where: { extId: agentExtId } });
     if (!agent) {
-      const passwordPlain = '123456';
-      const hashed = await bcrypt.hash(passwordPlain, 10);
-
       agent = this.userRepository.create({
         name: 'agent',
-        email: 'agent@gmail.com',
+        username: 'agent@gmail.com',
         phone: '',
         extId: agentExtId,
         isRegistered: true,
@@ -69,7 +62,7 @@ export class InitializationService {
         isAllowOrder: false,
         isAllowAllClients: false,
         recovery: Math.floor(100000 + Math.random() * 900000),
-        password: hashed,
+        password: '123456',
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -77,7 +70,6 @@ export class InitializationService {
       this.logger.log('Agent user initialized.');
     }
 
-    // Initialize HomeEdit Data
     const defaultHomeEdits = [
       { type: 'main', orden: 0, isVideo: false, isBanner: true, isActive: true, count: 1, countMobile: null, isPopUp: false, isDeletable: false },
       { type: 'categories', orden: 1, isVideo: false, isBanner: true, isActive: true, count: 4, countMobile: 2, isPopUp: false, isDeletable: false },

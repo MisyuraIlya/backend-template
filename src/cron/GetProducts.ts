@@ -12,7 +12,7 @@ import { ProductDto } from "src/erp/dto/product.dto";
 export class GetProductsService {
   private readonly logger = new Logger(GetProductsService.name);
   private readonly PAGE_SIZE = 100;
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(Product)

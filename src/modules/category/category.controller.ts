@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, UseInterceptors } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { Crud, CrudController } from '@dataui/crud';
 import { Category } from './entities/category.entity';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @Crud({
   model: { type: Category },
@@ -20,6 +21,8 @@ import { Category } from './entities/category.entity';
     },
   },
 })
+
+@UseInterceptors(CacheInterceptor)
 @Controller('category')
 export class CategoryController implements CrudController<Category> {
   constructor(public readonly service: CategoryService) {}

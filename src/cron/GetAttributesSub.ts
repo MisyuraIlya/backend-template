@@ -11,7 +11,7 @@ import { AttributeSub } from "src/modules/attribute-sub/entities/attribute-sub.e
 export class GetAttributesSubService {
   private readonly logger = new Logger(GetAttributesSubService.name);
   private readonly PAGE_SIZE = 1000;
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(AttributeSub)

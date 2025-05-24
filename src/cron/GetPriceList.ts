@@ -14,7 +14,7 @@ export interface PriceListDto {
 @Injectable()
 export class GetPriceListsService {
   private readonly logger = new Logger(GetPriceListsService.name);
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(PriceList)

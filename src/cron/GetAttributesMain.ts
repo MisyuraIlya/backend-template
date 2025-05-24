@@ -10,7 +10,7 @@ import { AttributeMain } from "src/modules/attribute-main/entities/attribute-mai
 export class GetAttributesMainService {
   private readonly logger = new Logger(GetAttributesMainService.name);
   private readonly PAGE_SIZE = 100;
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(AttributeMain)

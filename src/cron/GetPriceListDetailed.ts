@@ -11,7 +11,7 @@ import { Product } from "src/modules/product/entities/product.entity";
 @Injectable()
 export class GetPriceListDetailedService {
   private readonly logger = new Logger(GetPriceListDetailedService.name);
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(PriceListDetailed)

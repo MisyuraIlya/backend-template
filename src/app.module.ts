@@ -53,7 +53,6 @@ import { AgentTarget } from './modules/agent-target/entities/agent-target.entity
 import { NotificationUser } from './modules/notification-user/entities/notification-user.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ErpManager } from './erp/erp.manager';
-import { GetUsersService } from './cron/GetUsers';
 import { AdminModule } from './modules/admin/admin.module';
 import { CronModule } from './cron/cron.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -164,10 +163,10 @@ import { OfflineModule } from './modules/offline/offline.module';
     AppService,
     ErpManager,
     LoggingInterceptor,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAuthGuard,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

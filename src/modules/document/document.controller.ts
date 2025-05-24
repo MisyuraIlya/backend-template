@@ -5,13 +5,15 @@ import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
 import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
 import { StockHandler } from 'src/common/decorators/stock-handler.decorator';
 import { PriceHandler } from 'src/common/decorators/price-handler.decorator';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('document')
-@UseInterceptors(StockInterceptor, PriceInterceptor)
+@UseInterceptors(StockInterceptor, PriceInterceptor, CacheInterceptor)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
   @Get('documentList/:documentType/:dateFrom/:dateTo')
+  @CacheTTL(60)
   async findDocuments(
     @Param('documentType') documentType: string,
     @Param('dateFrom') dateFrom: string,
@@ -26,6 +28,7 @@ export class DocumentController {
   }
 
   @Get('documentItems/:documentType/:documentNumber')
+  @CacheTTL(60)
   async findDocumentItems(
     @Param('documentType') documentType: string,
     @Param('documentNumber') documentNumber: string,

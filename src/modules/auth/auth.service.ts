@@ -29,12 +29,7 @@ export class AuthService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  //
-  // Public API
-  //
-
   async login(user: User, response: Response) {
-
     const expiresAccessToken = new Date();
 
     expiresAccessToken.setMilliseconds(
@@ -116,7 +111,7 @@ export class AuthService {
 
     user.isRegistered = true;
     user.username = dto.username;
-    user.password = await this.hashPassword(dto.password); 
+    user.password = dto.password; 
     user.recovery = this.generateRecoveryCode(6);
     user.updatedAt = new Date();
 
@@ -155,7 +150,7 @@ export class AuthService {
       name: dto.fullName,
       email: dto.email,
       phone: dto.phone,
-      password: await this.hashPassword(dto.password),
+      password: dto.password,
       recovery: this.generateRecoveryCode(6, 900_000),
       isRegistered: true,
       isBlocked: false,
@@ -176,7 +171,7 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       phone: dto.phone,
-      password: await this.hashPassword(dto.password),
+      password: dto.password,
       recovery: this.generateRecoveryCode(6, 900_000),
       isRegistered: true,
       isBlocked: false,
@@ -295,7 +290,6 @@ export class AuthService {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  // Stubbed—returns the raw password. Replace with your chosen mechanism.
   private async hashPassword(password: string): Promise<string> {
     return password;
   }
@@ -305,12 +299,13 @@ export class AuthService {
     try {
       const user = await this.userRepo.findOneBy({username:username});
       const authenticated = user?.password === password
+      console.log('authenticated',authenticated)
       if (!authenticated) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('שם משתמש או סיסמה אינם תקינים');
       }
       return user;
     } catch (err) {
-      throw new UnauthorizedException('Credentials are not valid');
+      throw new UnauthorizedException('שם משתמש או סיסמה אינם תקינים');
     }
   }
 
@@ -319,11 +314,11 @@ export class AuthService {
       const user = await this.userRepo.findOneBy({ id: +userId });
       const authenticated = await compare(refreshToken, user?.refreshToken!);
       if (!authenticated) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('שם משתמש או סיסמה אינם תקינים');
       }
       return user;
     } catch (err) {
-      throw new UnauthorizedException('Refresh token is not valid.');
+     throw new UnauthorizedException('שם משתמש או סיסמה אינם תקינים');
     }
   }
 }

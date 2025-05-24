@@ -8,10 +8,15 @@ import { Product } from '../product/entities/product.entity';
 import { History } from '../history/entities/history.entity';
 import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
 import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Product, History]),
+    CacheModule.register({
+      ttl: 30,   
+      max: 100,  
+    }),
   ],
   controllers: [DocumentController],
   providers: [

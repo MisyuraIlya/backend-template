@@ -8,10 +8,16 @@ import { ErpManager } from 'src/erp/erp.manager';
 import { User } from '../user/entities/user.entity';
 import { StockInterceptor } from 'src/common/interceptors/stock.interceptor';
 import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product,AttributeMain,User]),
+    CacheModule.register({
+      ttl: 30,    
+      max: 200,   
+    }),
   ],
   controllers: [ProductController],
   providers: [

@@ -7,6 +7,7 @@ import { PriceInterceptor } from 'src/common/interceptors/price.interceptor';
 import { StockHandler } from 'src/common/decorators/stock-handler.decorator';
 import { PriceHandler } from 'src/common/decorators/price-handler.decorator';
 import { ReorderItemDto } from './dto/reorder.dto';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Crud({
   model: { type: Product },
@@ -19,7 +20,7 @@ import { ReorderItemDto } from './dto/reorder.dto';
   },
 })
 
-@UseInterceptors(StockInterceptor, PriceInterceptor)
+@UseInterceptors(StockInterceptor, PriceInterceptor,CacheInterceptor)
 @Controller('product')
 export class ProductController implements CrudController<Product> {
   constructor(public readonly service: ProductService) {}
@@ -27,6 +28,7 @@ export class ProductController implements CrudController<Product> {
   @Get(':documentType/:mode/:lvl1/:lvl2/:lvl3')
   @StockHandler()
   @PriceHandler()
+  @CacheTTL(120)  
   async getCatalog(
     @Param('lvl1', ParseIntPipe) lvl1: number,
     @Param('lvl2', ParseIntPipe) lvl2: number,

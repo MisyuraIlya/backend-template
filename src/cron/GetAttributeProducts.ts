@@ -12,7 +12,7 @@ import { ProductAttribute } from 'src/modules/product-attribute/entities/product
 export class GetAttributeProducts {
   private readonly logger = new Logger(GetAttributeProducts.name);
   private readonly PAGE_SIZE = 1000;
-  private isSyncing = false;
+  public isSyncing = false;
 
   constructor(
     @InjectRepository(AttributeSub)
