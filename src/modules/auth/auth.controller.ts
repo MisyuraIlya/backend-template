@@ -21,9 +21,12 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities/user.entity';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
 @UseInterceptors(ResponseInterceptor)
+@Throttle({ default: { limit: 5, ttl: 30_000 } })
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

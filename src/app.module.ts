@@ -64,13 +64,23 @@ import { LoggerModule } from './common/logger/logger.module';
 import { LoggingInterceptor } from './common/logger/logging.interceptor';
 import { SupportModule } from './modules/support/support.module';
 import { OfflineModule } from './modules/offline/offline.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
+
     ConfigModule.forRoot({
       envFilePath: ['.env'],
       isGlobal: true,
     }),
+
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,    
+        limit: 1000,   
+      },
+    ]),
+
     TypeOrmModule.forRootAsync({
       useFactory: async () => ({
         type: 'mysql',
@@ -108,22 +118,7 @@ import { OfflineModule } from './modules/offline/offline.module';
         synchronize: true,
       }),
     }),
-    MailerModule.forRootAsync({
-      useFactory: async () => ({
-        transport: {
-          host: process.env.MAIL_HOST,
-          port: parseInt(process.env.MAIL_PORT!, 10) || 587,
-          secure: false,
-          auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASS,
-          },
-        },
-        defaults: {
-          from: `"No Reply" <${process.env.MAIL_FROM}>`,
-        },
-      }),
-    }),
+
     PrometheusModule.register(),
     TypeOrmModule.forFeature([User]),
     ScheduleModule.forRoot(),
@@ -170,6 +165,10 @@ import { OfflineModule } from './modules/offline/offline.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
