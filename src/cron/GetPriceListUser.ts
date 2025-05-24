@@ -46,7 +46,6 @@ export class GetPriceListUserService {
       return;
     }
 
-    // Gather unique ERP IDs
     const userExIds = Array.from(
       new Set(data.map((d) => d.userExId).filter((id): id is string => !!id))
     );
@@ -54,7 +53,6 @@ export class GetPriceListUserService {
       new Set(data.map((d) => d.priceListExId).filter((id): id is string => !!id))
     );
 
-    // Load corresponding User and PriceList entities
     const [users, priceLists] = await Promise.all([
       this.userRepo.find({ where: { extId: In(userExIds) } }),
       this.priceListRepo.find({ where: { extId: In(priceListExIds) } }),
@@ -65,7 +63,6 @@ export class GetPriceListUserService {
     const priceListMap = new Map<string, PriceList>();
     priceLists.forEach((p) => priceListMap.set(p.extId!, p));
 
-    // Mark all existing associations as expired before re-import
     const now = new Date();
     await this.priceListUserRepo
       .createQueryBuilder()
@@ -74,7 +71,6 @@ export class GetPriceListUserService {
       .where("expiredAt IS NULL")
       .execute();
 
-    // Build new links
     const toSave: PriceListUser[] = [];
     for (const dto of data) {
       if (!dto.userExId || !dto.priceListExId) {
@@ -98,7 +94,6 @@ export class GetPriceListUserService {
       const plu = this.priceListUserRepo.create({
         user,
         priceList,
-        // expiredAt stays null for fresh imports
       });
       toSave.push(plu);
     }
@@ -111,9 +106,6 @@ export class GetPriceListUserService {
     }
   }
 
-  /**
-   * Cron handler, runs every minute (skip overlapping runs)
-   */
 //   @Cron(CronExpression.EVERY_MINUTE, { timeZone: "Asia/Jerusalem" })
   public async handleCron() {
     if (this.isSyncing) {

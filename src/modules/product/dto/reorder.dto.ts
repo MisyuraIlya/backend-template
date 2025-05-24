@@ -1,4 +1,3 @@
-// reorder.dto.ts
 import { IsInt } from 'class-validator';
 
 export class ReorderItemDto {

@@ -22,9 +22,6 @@ export class GetPriceListsService {
     private readonly erpManager: ErpManager,
   ) {}
 
-  /**
-   * Fetches all price lists from the ERP and upserts them into the DB.
-   */
   public async sync(): Promise<void> {
     const data: PriceListDto[] = await this.erpManager.GetPriceList();
 
@@ -39,32 +36,25 @@ export class GetPriceListsService {
         continue;
       }
 
-      // Try to find an existing price list by external ID
       let priceList = await this.priceListRepository.findOne({
         where: { extId: dto.priceListExtId },
       });
 
       if (!priceList) {
-        // Create new if not exists
         priceList = this.priceListRepository.create({
           extId: dto.priceListExtId,
           title: dto.priceListTitle ?? undefined,
         });
         this.logger.log(`Creating new PriceList ${dto.priceListExtId}`);
       } else {
-        // Update fields on existing entity
         priceList.title = dto.priceListTitle ?? priceList.title;
         this.logger.log(`Updating PriceList ${dto.priceListExtId}`);
       }
 
-      // Persist create or update
       await this.priceListRepository.save(priceList);
     }
   }
 
-  /**
-   * Runs every minute (Asia/Jerusalem) and guards against overlapping executions.
-   */
 //   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron() {
     if (this.isSyncing) {

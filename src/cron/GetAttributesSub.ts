@@ -1,4 +1,3 @@
-// src/modules/get-attributes-sub/get-attributes-sub.service.ts
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -23,10 +22,8 @@ export class GetAttributesSubService {
 
   public async sync(): Promise<void> {
     let skip = 0;
-    // key = `${mainExtId}-${subTitle}`
     const uniqueSubs = new Map<string, { mainExtId: string; title: string }>();
 
-    // 1) Fetch all products in pages and collect unique main→sub pairs
     while (true) {
       this.logger.log(`Fetching ERP products batch (skip=${skip}, top=${this.PAGE_SIZE})`);
       const batch = await this.erpManager.GetProducts(this.PAGE_SIZE, skip) ?? [];
@@ -55,17 +52,14 @@ export class GetAttributesSubService {
       skip += this.PAGE_SIZE;
     }
 
-    // 2) Load all existing mains and build a map extId → AttributeMain
     const mains = await this.attributeMainRepository.find();
     const mainsMap = new Map(mains.map(m => [m.extId, m]));
 
-    // 3) Load all existing subs (with their parent relation) and build a map
     const existingSubs = await this.attributesSubRepository.find({ relations: ['attribute'] });
     const existingMap = new Map(
       existingSubs.map(s => [`${s.attribute.extId}-${s.title}`, s])
     );
 
-    // 4) Upsert each unique sub
     let ordenCounter = 1;
     for (const { mainExtId, title } of uniqueSubs.values()) {
       const parent = mainsMap.get(mainExtId);
@@ -78,19 +72,16 @@ export class GetAttributesSubService {
       let sub = existingMap.get(key);
 
       if (!sub) {
-        // create new
         sub = this.attributesSubRepository.create({
           attribute: parent,
           title,
           isPublished: true,
           orden: ordenCounter++,
-          productCount: 0,           // or set to 1 if you want a count of rows
+          productCount: 0,          
         });
       } else {
-        // update existing
         sub.title = title;
         sub.orden = ordenCounter++;
-        // preserve productCount or adjust as needed
       }
 
       await this.attributesSubRepository.save(sub);
@@ -99,7 +90,6 @@ export class GetAttributesSubService {
     this.logger.log(`Synchronized ${uniqueSubs.size} AttributeSub records`);
   }
 
-  /** Runs every minute (Asia/Jerusalem) */
   // @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron() {
     if (this.isSyncing) {

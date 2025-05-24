@@ -1,4 +1,3 @@
-// src/modules/get-products/get-products.service.ts
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -56,11 +55,9 @@ export class GetProductsService {
           prod.finalPrice   = dto.minimumPrice ?? prod.finalPrice;
           prod.isPublished  = dto.status;
 
-          // example custom flags
           prod.isNew     = dto.isHumane ?? prod.isNew;
           prod.isSpecial = dto.isDrugNotInBasket ?? prod.isSpecial;
 
-          // link categories (only if IDs present)
           if (dto.categoryLvl1Id) {
             const cat1 = await this.categoryRepository.findOne({
               where: { extId: dto.categoryLvl1Id, lvlNumber: 1 },

@@ -21,7 +21,6 @@ export class OneSignalService {
   async sendPushAllUsers(title: string, description: string, imgLink: string) {
     const users = await this.userRepository.find();
 
-    // filter out nulls, then map to string[]
     const appIds: string[] = users
       .filter(user => user.oneSignalAppId != null)
       .map(user => user.oneSignalAppId!);
@@ -40,7 +39,6 @@ export class OneSignalService {
   async alertToAgentsGetOrder(title: string, description: string) {
     const users = await this.userRepository.find();
 
-    // only include agents/admins with a valid appId
     const appIds: string[] = users
       .filter(user =>
         user.oneSignalAppId != null &&

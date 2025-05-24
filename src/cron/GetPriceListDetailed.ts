@@ -34,7 +34,6 @@ export class GetPriceListDetailedService {
     }
 
     for (const dto of data) {
-      // 1️⃣ Find product by SKU
       const product = await this.productRepo.findOne({
         where: { sku: dto.sku },
       });
@@ -42,7 +41,6 @@ export class GetPriceListDetailedService {
         continue;
       }
 
-      // 2️⃣ Find pricelist by name
       const priceListEntity = await this.priceListRepo.findOne({
         where: { extId: dto.priceList },
       });
@@ -51,7 +49,6 @@ export class GetPriceListDetailedService {
         continue;
       }
 
-      // 3️⃣ Look for existing detailed entry
       let detailed = await this.priceListDetailedRepo.findOne({
         where: {
           product: { id: product.id },
@@ -60,7 +57,6 @@ export class GetPriceListDetailedService {
       });
 
       if (!detailed) {
-        // create new
         detailed = this.priceListDetailedRepo.create({
           product,
           priceList: priceListEntity,
@@ -68,17 +64,14 @@ export class GetPriceListDetailedService {
           discount: dto.discount ?? 0,
         });
       } else {
-        // update existing
         detailed.price    = dto.price!;
         detailed.discount = dto.discount ?? 0;
       }
 
-      // 4️⃣ Save to DB
       await this.priceListDetailedRepo.save(detailed);
     }
   }
 
-  // ⏰ Re-enable if you want it to run every minute in Asia/Jerusalem
 //   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron() {
     if (this.isSyncing) {

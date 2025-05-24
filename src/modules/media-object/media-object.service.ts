@@ -1,4 +1,3 @@
-// src/media-object/media-object.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { join, extname } from 'path';
 import { mkdirSync } from 'fs';

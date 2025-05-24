@@ -1,4 +1,3 @@
-// src/media-object/media-object.controller.ts
 import {
   Controller,
   Post,

@@ -1,4 +1,3 @@
-// src/modules/get-attributes-main/get-attributes-main.service.ts
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -46,11 +45,9 @@ export class GetAttributesMainService {
       skip += this.PAGE_SIZE;
     }
 
-    // load existing AttributeMain rows into a map
     const existing = await this.attributesMainRepo.find();
     const existingMap = new Map(existing.map(a => [a.extId, a]));
 
-    // upsert each unique attribute
     let ordenCounter = 1;
     for (const [extId, title] of unique) {
       let attr = existingMap.get(extId);
@@ -66,7 +63,6 @@ export class GetAttributesMainService {
       } else {
         attr.title = title;
         attr.orden = ordenCounter++;
-        // you can choose to overwrite or preserve other flags here
       }
       await this.attributesMainRepo.save(attr);
     }
@@ -74,7 +70,6 @@ export class GetAttributesMainService {
     this.logger.log(`Synchronized ${unique.size} AttributeMain records`);
   }
 
-  /** Runs every minute (Asia/Jerusalem) */
 //  @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron() {
     if (this.isSyncing) {

@@ -1,4 +1,3 @@
-// src/modules/auth/guards/jwt-auth.guard.ts
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
@@ -26,7 +25,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
-    // 3) otherwise proceed with normal JWT-strategy checks
     return super.canActivate(context);
   }
 }

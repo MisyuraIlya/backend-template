@@ -217,14 +217,12 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
         $select: "DocTotal,VatSum,DiscountPercent,DocumentLines,Comments,Attachments"
       };
 
-      // 1) Fetch the document
       const response = await this.makeAuthorizedRequest('GET', endpoint, queryParams);
       if (!response.value || response.value.length === 0) {
         throw new Error(`Document ${documentNumber} not found`);
       }
       const doc = response.value[0];
 
-      // 2) Map lines to products
       const products: DocumentItemDto[] = doc.DocumentLines.map((line: any) => ({
         sku: line.ItemCode,
         title: line.ItemDescription,
@@ -235,7 +233,6 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
         product: line
       }));
 
-      // 3) Map any attachments into your files DTO
       //    (if your API returns attachments; otherwise leave empty)
       const files: DocumentItemFileDto[] = (doc.Attachments ?? []).map((att: any) => ({
         fileName: att.FileName,
@@ -249,9 +246,7 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       const totalAfterDiscount = doc.DocTotal - (doc.DocTotal * (doc.DiscountPercent ?? 0) / 100);
       const totalPrecent = doc.DiscountPercent;
 
-      // 5) (Optional) pull in comments, PDF, etc.
       const comment = doc.Comments ?? null;
-      // If you have an attachment entry you need to fetch separately, do it here:
       // const base64Pdf = doc.AttachmentEntry 
       //   ? await this.fetchPdfAsBase64(doc.AttachmentEntry) 
       //   : null;
@@ -383,7 +378,6 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
         queryParams
       );
 
-      // map into your DTO
       const warehouseDetails: WarehousesItemDetailedDto[] = response.value.map(
         (item: any) => ({
           warehouseCode: item.WarehouseCode,
@@ -652,7 +646,6 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
 
 
     async SalesQuantityKeeperAlert(userExtId: string): Promise<SalesQuantityKeeperAlertLineDto[]> {
-      // Format the necessary date values for the query
       const dateCurrent = new Date();
       const nextMonthCurrent = new Date(dateCurrent.setMonth(dateCurrent.getMonth() - 1));
       const previousDateStart = new Date(dateCurrent.setFullYear(dateCurrent.getFullYear() - 1, dateCurrent.getMonth() - 2));
@@ -660,7 +653,6 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       const threeMonthsAgoStart = new Date(dateCurrent.setMonth(dateCurrent.getMonth() - 4));
       const threeMonthsAgoEnd = new Date(dateCurrent.setMonth(dateCurrent.getMonth() - 1));
     
-      // Format dates to 'YYYY-MM-DD' strings
       const formattedDateCurrent = dateCurrent.toISOString().split('T')[0];
       const formattedNextMonthCurrent = nextMonthCurrent.toISOString().split('T')[0];
       const formattedPreviousDateStart = previousDateStart.toISOString().split('T')[0];
@@ -668,7 +660,6 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
       const formattedThreeMonthsAgoStart = threeMonthsAgoStart.toISOString().split('T')[0];
       const formattedThreeMonthsAgoEnd = threeMonthsAgoEnd.toISOString().split('T')[0];
     
-      // Prepare the query parameters for the request
       const endpoint = "/SQLQueries('quantityKeeper')/List";
       const queryParams = {
         cardCode: `'${userExtId}'`,

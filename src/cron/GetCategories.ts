@@ -1,4 +1,3 @@
-// src/modules/get-categories/get-categories.service.ts
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -19,11 +18,7 @@ export class GetCategoriesService {
     private readonly erpManager: ErpManager,
   ) {}
 
-  /**
-   * Syncs up to 3 levels of categories by fetching one page at a time
-   * and saving/updating each category before fetching the next page.
-   * Sets proper parent relationships for lvl 2 and lvl 3 categories.
-   */
+
   public async sync(): Promise<void> {
     let skip = 0;
 
@@ -36,12 +31,10 @@ export class GetCategoriesService {
         break;
       }
 
-      // Filter out any null/undefined entries
       const validBatch = batch.filter((dto): dto is ProductDto => dto != null);
 
       for (const dto of validBatch) {
         try {
-          // Level 1
           if (dto.categoryLvl1Id && dto.categoryLvl1Name) {
             let cat1 = await this.categoryRepository.findOne({
               where: { extId: dto.categoryLvl1Id, lvlNumber: 1 },
@@ -55,7 +48,6 @@ export class GetCategoriesService {
             cat1.title = dto.categoryLvl1Name;
             await this.categoryRepository.save(cat1);
 
-            // Level 2
             let cat2: Category | null = null;
             if (dto.categoryLvl2Id && dto.categoryLvl2Name) {
               cat2 = await this.categoryRepository.findOne({
@@ -73,7 +65,6 @@ export class GetCategoriesService {
               await this.categoryRepository.save(cat2);
             }
 
-            // Level 3
             if (dto.categoryLvl3Id && dto.categoryLvl3Name) {
               let cat3 = await this.categoryRepository.findOne({
                 where: { extId: dto.categoryLvl3Id, lvlNumber: 3 },
@@ -83,7 +74,6 @@ export class GetCategoriesService {
                 cat3.extId = dto.categoryLvl3Id;
                 cat3.lvlNumber = 3;
                 cat3.isPublished = true;
-                // parent of lvl3 is lvl2 if exists, otherwise lvl1
                 cat3.parent = cat2 ?? cat1;
               }
               cat3.title = dto.categoryLvl3Name;
@@ -96,7 +86,7 @@ export class GetCategoriesService {
             `Failed to process product DTO ${JSON.stringify(dto)}`,
             (err as Error).stack,
           );
-          // continue on to the next DTO
+          
         }
       }
 
@@ -104,7 +94,6 @@ export class GetCategoriesService {
     }
   }
 
-  /** Runs every minute (Asia/Jerusalem) */
 //   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron() {
     if (this.isSyncing) {

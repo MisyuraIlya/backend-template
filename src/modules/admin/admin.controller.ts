@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { GetUsersService } from 'src/cron/GetUsers';
 import { GetAgentService } from 'src/cron/GetAgents';
 import { GetCategoriesService } from 'src/cron/GetCategories';
@@ -10,8 +10,12 @@ import { GetAttributesMainService } from 'src/cron/GetAttributesMain';
 import { GetAttributesSubService } from 'src/cron/GetAttributesSub';
 import { GetAttributeProducts } from 'src/cron/GetAttributeProducts';
 import { InitializationService } from 'src/cron/Initialization';
+import { Admin } from 'src/common/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Controller('admin')
+@UseGuards(RolesGuard)
+@Admin()
 export class AdminController {
   constructor(
     private readonly initialization: InitializationService,

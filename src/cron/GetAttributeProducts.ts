@@ -1,4 +1,3 @@
-// src/modules/get-attribute-products/get-attribute-products.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -30,19 +29,16 @@ export class GetAttributeProducts {
   public async sync(): Promise<void> {
     let skip = 0;
 
-    // 1) Load all existing AttributeSubs with their parent AttributeMain
     const subs = await this.attributeSubRepository.find({ relations: ['attribute'] });
     const subsMap = new Map<string, AttributeSub>(
       subs.map(sub => [`${sub.attribute.extId}-${sub.title}`, sub]),
     );
 
-    // 2) Load existing ProductAttribute relations to avoid duplicates
     const existing = await this.productAttributeRepository.find({ relations: ['product', 'attributeSub'] });
     const existingSet = new Set<string>(
       existing.map(pa => `${pa.product.id}-${pa.attributeSub.id}`),
     );
 
-    // 3) Fetch ERP products in pages and link products to subs
     while (true) {
       this.logger.log(`Fetching ERP products batch (skip=${skip}, top=${this.PAGE_SIZE})`);
       const batch = (await this.erpManager.GetProducts(this.PAGE_SIZE, skip)) ?? [];
@@ -54,7 +50,6 @@ export class GetAttributeProducts {
       for (const dto of batch) {
         if (!dto || !dto.sku) continue;
 
-        // Find local Product by SKU (adjust field if using extId)
         const product = await this.productRepository.findOne({ where: { sku: dto.sku } });
         if (!product) {
           this.logger.warn(`Product not found for sku=${dto.sku}`);
@@ -79,11 +74,9 @@ export class GetAttributeProducts {
 
           const relationKey = `${product.id}-${attributeSub.id}`;
           if (existingSet.has(relationKey)) {
-            // Already linked
             continue;
           }
 
-          // Create new ProductAttribute
           const pa = this.productAttributeRepository.create({
             product,
             attributeSub,
@@ -100,7 +93,6 @@ export class GetAttributeProducts {
     this.logger.log('Synchronization of ProductAttribute relations completed');
   }
 
-  /** Runs every minute (Asia/Jerusalem) */
   // @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron() {
     if (this.isSyncing) {

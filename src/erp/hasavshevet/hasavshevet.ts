@@ -54,7 +54,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
               'Authorization': `Bearer ${process.env.ERP_TOKEN}`,
               'Content-Type': 'application/json',
             },
-            timeout: 60000, // Optional timeout
+            timeout: 60000, 
           });
           return response.data;
         } catch (error) {
