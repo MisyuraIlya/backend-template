@@ -36,6 +36,14 @@ export class DocumentController {
     return this.documentService.getDocumentItems(documentType,documentNumber)
   }
 
+  @Get('generatePdf/:documentType/:documentNumber')
+  async generatePdf(
+    @Param('documentType') documentType: string,
+    @Param('documentNumber') documentNumber: string,
+  ) {
+    return this.documentService.generatePdf(documentType,documentNumber)
+  }
+
   @Get('cartesset/:dateFrom/:dateTo/:userId')
   async findCartesset(
     @Param('dateFrom') dateFrom: string,
@@ -73,5 +81,7 @@ export class DocumentController {
   async cartCheck(@Body() dto: CartCheckDto) {
     return this.documentService.checkCart(dto)
   }
+
+
 
 }

@@ -10,6 +10,7 @@ import { DocumentItemDto, DocumentItemFileDto, DocumentItemsDto } from 'src/erp/
 import { CartItem } from '../history/dto/create-order.dto';
 import { CartCheckDto } from './dto/cart-check.dto';
 import { UsersTypes } from '../user/enums/UsersTypes';
+import { PdfGenerator } from 'src/utils/pdf-generator.util';
 
 @Injectable()
 export class DocumentService {
@@ -289,6 +290,15 @@ export class DocumentService {
   async checkCart(dto: CartCheckDto) {
     const user = await this.userRepository.findOneBy({id:dto.user.id})
     return { maam: 18, }
+  }
+
+  async generatePdf(
+    documentType: string,
+    documentNumber: string,
+  ): Promise<{base64:string}> {
+    const response = await this.getDocumentItems(documentType,documentNumber);
+    const pdf = await PdfGenerator.generateDocument(response,documentNumber)
+    return {base64:pdf}
   }
   
 }
