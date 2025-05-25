@@ -8,6 +8,8 @@ import { NotificationUser } from '../notification-user/entities/notification-use
 import { User } from '../user/entities/user.entity';
 import { UsersTypes } from '../user/enums/UsersTypes';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import * as webPush from 'web-push';
+import { PushSubscriptionService } from '../push-subscription/push-subscription.service';
 
 @Injectable()
 export class NotificationService extends TypeOrmCrudService<Notification> {
@@ -20,8 +22,15 @@ export class NotificationService extends TypeOrmCrudService<Notification> {
     private readonly historyRepository: Repository<History>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly pushSubSvc: PushSubscriptionService,
   ) {
     super(notificationRepository);
+    const { publicKey, privateKey } = require('../../vapid.json');
+    webPush.setVapidDetails(
+      'mailto:you@yourdomain.com',
+      publicKey,
+      privateKey,
+    );
   }
 
   async handleOrderNotification(history: History) {
@@ -111,6 +120,18 @@ export class NotificationService extends TypeOrmCrudService<Notification> {
       );
     }
     return { status: true, message: 'Notification sent successfully' };
+  }
+
+  async sendNotificationPushToUser(userId: number, payload: any) {
+    const subs = await this.pushSubSvc.getSubscriptionsForUser(userId);
+    await Promise.all(
+      subs.map(s =>
+        webPush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          JSON.stringify(payload),
+        ),
+      ),
+    );
   }
 
 

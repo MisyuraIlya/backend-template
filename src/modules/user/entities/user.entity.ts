@@ -8,6 +8,7 @@ import { PriceListUser } from 'src/modules/price-list-user/entities/price-list-u
 import { NotificationUser } from 'src/modules/notification-user/entities/notification-user.entity';
 import { Payment } from 'src/modules/payment/entities/payment.entity';
 import { UsersTypes } from '../enums/UsersTypes';
+import { PushSubscription } from 'src/modules/push-subscription/entities/push-subscription.entity';
 
 @Entity()
 export class User {
@@ -146,4 +147,7 @@ export class User {
 
   @OneToMany(() => History, (history) => history.agentApproved)
   approvedHistories: History[];
+
+  @OneToMany(() => PushSubscription, (sub) => sub.user)
+  pushSubscriptions: PushSubscription[];
 }

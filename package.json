@@ -58,6 +58,7 @@
     "typeorm": "^0.3.23",
     "typeorm-naming-strategies": "^4.1.0",
     "uuid": "^11.1.0",
+    "web-push": "^3.6.7",
     "winston": "^3.17.0",
     "winston-loki": "^6.1.3"
   },

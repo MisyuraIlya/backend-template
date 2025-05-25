@@ -65,6 +65,7 @@ import { LoggingInterceptor } from './common/logger/logging.interceptor';
 import { SupportModule } from './modules/support/support.module';
 import { OfflineModule } from './modules/offline/offline.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { PushSubscriptionModule } from './modules/push-subscription/push-subscription.module';
 
 @Module({
   imports: [
@@ -151,7 +152,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     DocumentModule,
     LoggerModule,
     SupportModule,
-    OfflineModule
+    OfflineModule,
+    PushSubscriptionModule
   ],
   controllers: [AppController],
   providers: [
