@@ -23,12 +23,4 @@ export class NotificationController implements CrudController<Notification> {
     return this.service.sendNotification(dto)
   }
 
-  @Post('subscribe')
-  subscribe(@Body() subscription: any) {
-    // e.g. this.subscriptionsRepository.save(subscription);
-    return { success: true };
-  }
-
-
-
 }

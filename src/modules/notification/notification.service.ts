@@ -25,12 +25,6 @@ export class NotificationService extends TypeOrmCrudService<Notification> {
     private readonly pushSubSvc: PushSubscriptionService,
   ) {
     super(notificationRepository);
-    const { publicKey, privateKey } = require('../../vapid.json');
-    webPush.setVapidDetails(
-      'mailto:you@yourdomain.com',
-      publicKey,
-      privateKey,
-    );
   }
 
   async handleOrderNotification(history: History) {

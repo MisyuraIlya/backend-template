@@ -66,6 +66,7 @@ import { SupportModule } from './modules/support/support.module';
 import { OfflineModule } from './modules/offline/offline.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PushSubscriptionModule } from './modules/push-subscription/push-subscription.module';
+import { PushSubscription } from './modules/push-subscription/entities/push-subscription.entity';
 
 @Module({
   imports: [
@@ -115,6 +116,7 @@ import { PushSubscriptionModule } from './modules/push-subscription/push-subscri
           Variety,
           AgentObjective,
           AgentTarget,
+          PushSubscription
         ],
         synchronize: true,
       }),
