@@ -7,7 +7,7 @@ export class PriceListDetailed {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Product, (product) => product.priceListDetaileds)
+  @ManyToOne(() => Product, (product) => product.priceListDetaileds, { onDelete: 'CASCADE' })
   product: Product;
 
   @Column()
@@ -16,6 +16,6 @@ export class PriceListDetailed {
   @Column({ nullable: true })
   discount: number;
 
-  @ManyToOne(() => PriceList, (priceList) => priceList.priceListDetaileds)
+  @ManyToOne(() => PriceList, (priceList) => priceList.priceListDetaileds, { onDelete: 'CASCADE' })
   priceList: PriceList;
 }

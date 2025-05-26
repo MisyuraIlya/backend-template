@@ -12,7 +12,7 @@ export class HomeMedia {
   @ManyToOne(() => MediaObject, (media) => media.homeMedia, { cascade: true })
   mediaObject: MediaObject;
 
-  @ManyToOne(() => HomeEdit, (homeEdit) => homeEdit.homeMedia)
+  @ManyToOne(() => HomeEdit, (homeEdit) => homeEdit.homeMedia, { onDelete: 'CASCADE' })
   home: HomeEdit;
 
   @Column({ nullable: true })

@@ -7,10 +7,10 @@ export class Variety {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.varieties)
+  @ManyToOne(() => User, (user) => user.varieties, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Product, (product) => product.varieties)
+  @ManyToOne(() => Product, (product) => product.varieties, { onDelete: 'CASCADE' })
   sku: Product;
 
   @Column({ default: true })

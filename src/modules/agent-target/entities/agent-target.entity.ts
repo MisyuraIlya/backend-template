@@ -6,7 +6,7 @@ export class AgentTarget {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.agentTargets)
+  @ManyToOne(() => User, (user) => user.agentTargets, { onDelete: 'CASCADE' })
   agent: User;
 
   @Column({ length: 255, nullable: true })

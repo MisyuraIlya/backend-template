@@ -8,10 +8,10 @@ export class BonusDetailed {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Bonus, (bonus) => bonus.bonusDetaileds)
+  @ManyToOne(() => Bonus, (bonus) => bonus.bonusDetaileds, { onDelete: 'CASCADE' })
   bonus: Bonus;
 
-  @ManyToOne(() => Product, (product) => product.bonusDetaileds)
+  @ManyToOne(() => Product, (product) => product.bonusDetaileds, { onDelete: 'CASCADE' })
   product: Product;
 
   @Column({ nullable: true })
@@ -19,7 +19,7 @@ export class BonusDetailed {
   @IsInt()
   minimumQuantity: number;
 
-  @ManyToOne(() => Product, (product) => product.bonusProductDetaildes)
+  @ManyToOne(() => Product, (product) => product.bonusProductDetaildes, { onDelete: 'CASCADE' })
   bonusProduct: Product;
 
   @Column({ nullable: true })

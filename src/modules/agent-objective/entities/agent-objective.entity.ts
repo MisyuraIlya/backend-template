@@ -8,10 +8,10 @@ export class AgentObjective {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.agentObjectives)
+  @ManyToOne(() => User, (user) => user.agentObjectives, { onDelete: 'CASCADE' })
   agent: User;
 
-  @ManyToOne(() => User, (user) => user.clientObjectives)
+  @ManyToOne(() => User, (user) => user.clientObjectives, { onDelete: 'CASCADE' })
   client: User;
 
   @Column()

@@ -7,10 +7,10 @@ export class PriceListUser {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.priceListUsers)
+  @ManyToOne(() => User, (user) => user.priceListUsers, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => PriceList, (priceList) => priceList.priceListUsers)
+  @ManyToOne(() => PriceList, (priceList) => priceList.priceListUsers, { onDelete: 'CASCADE' })
   priceList: PriceList;
 
   @Column({ nullable: true })

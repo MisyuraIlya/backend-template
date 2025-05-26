@@ -35,7 +35,7 @@ export class Category {
   @IsInt()
   lvlNumber: number;
 
-  @ManyToOne(() => Category, (category) => category.categories)
+  @ManyToOne(() => Category, (category) => category.categories, { onDelete: 'CASCADE' })
   parent: Category;
 
   @OneToMany(() => Category, (category) => category.parent)
@@ -50,7 +50,7 @@ export class Category {
   @OneToMany(() => Product, (product) => product.categoryLvl3)
   productsLvl3: Product[];
 
-  @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.categories)
+  @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.categories, { onDelete: 'CASCADE' })
   mediaObject: MediaObject;
 
   @Column('simple-array', { nullable: true })

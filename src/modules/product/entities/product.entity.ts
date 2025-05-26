@@ -92,13 +92,13 @@ export class Product {
   @IsBoolean()
   isPublished: boolean;
 
-  @ManyToOne(() => Category, (category) => category.productsLvl1)
+  @ManyToOne(() => Category, (category) => category.productsLvl1, { onDelete: 'CASCADE' })
   categoryLvl1: Category;
 
-  @ManyToOne(() => Category, (category) => category.productsLvl2)
+  @ManyToOne(() => Category, (category) => category.productsLvl2, { onDelete: 'CASCADE' })
   categoryLvl2: Category;
 
-  @ManyToOne(() => Category, (category) => category.productsLvl3)
+  @ManyToOne(() => Category, (category) => category.productsLvl3, { onDelete: 'CASCADE' })
   categoryLvl3: Category;
 
   @OneToMany(() => ProductImages, (image) => image.product)

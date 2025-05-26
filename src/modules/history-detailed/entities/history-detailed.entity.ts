@@ -8,7 +8,7 @@ export class HistoryDetailed {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => History, (history) => history.historyDetaileds)
+  @ManyToOne(() => History, (history) => history.historyDetaileds, { onDelete: 'CASCADE' })
   history: History;
 
   @ManyToOne(() => Product, (product) => product.historyDetaileds, { cascade: true })

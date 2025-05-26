@@ -7,10 +7,10 @@ export class NotificationUser {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.notificationUsers)
+  @ManyToOne(() => User, (user) => user.notificationUsers, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Notification, (notification) => notification.notificationUsers)
+  @ManyToOne(() => Notification, (notification) => notification.notificationUsers, { onDelete: 'CASCADE' })
   notification: Notification;
 
   @Column()

@@ -8,7 +8,7 @@ export class AttributeSub {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => AttributeMain, (attributeMain) => attributeMain.SubAttributes)
+  @ManyToOne(() => AttributeMain, (attributeMain) => attributeMain.SubAttributes, { onDelete: 'CASCADE' })
   attribute: AttributeMain;
 
   @Column({ length: 255, nullable: true })

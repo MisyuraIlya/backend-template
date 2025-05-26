@@ -103,13 +103,13 @@ export class User {
   @Column({ nullable: true })
   taxCode: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
   parent: User;
 
   @OneToMany(() => User, (user) => user.parent)
   users: User[];
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
   agent: User;
 
   @OneToMany(() => User, (user) => user.agent)

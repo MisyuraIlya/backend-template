@@ -22,7 +22,7 @@ export class Notification {
   @Column()
   isSend: boolean;
 
-  @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.notifications, { nullable: true })
+  @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.notifications, { nullable: true, onDelete: 'CASCADE' })
   mediaObject: MediaObject;
 
   @Column()

@@ -90,16 +90,16 @@ export class History {
   @OneToMany(() => HistoryDetailed, (historyDetailed) => historyDetailed.history)
   historyDetaileds: HistoryDetailed[];
 
-  @ManyToOne(() => User, (user) => user.agentHistories)
+  @ManyToOne(() => User, (user) => user.agentHistories, { onDelete: 'CASCADE' })
   agent: User;
 
-  @ManyToOne(() => User, (user) => user.approvedHistories)
+  @ManyToOne(() => User, (user) => user.approvedHistories, { onDelete: 'CASCADE' })
   agentApproved: User;
 
-  @ManyToOne(() => User, (user) => user.histories)
+  @ManyToOne(() => User, (user) => user.histories, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Payment, (payment) => payment.histories)
+  @ManyToOne(() => Payment, (payment) => payment.histories, { onDelete: 'CASCADE' })
   payment: Payment;
 
 }

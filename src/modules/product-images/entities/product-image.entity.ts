@@ -7,10 +7,10 @@ export class ProductImages {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Product, (product) => product.productImages)
+  @ManyToOne(() => Product, (product) => product.productImages, { onDelete: 'CASCADE' })
   product: Product;
 
-  @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.productImages)
+  @ManyToOne(() => MediaObject, (mediaObject) => mediaObject.productImages, { onDelete: 'CASCADE' })
   mediaObject: MediaObject;
 
 }

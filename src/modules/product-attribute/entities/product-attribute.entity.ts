@@ -7,10 +7,10 @@ export class ProductAttribute {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Product, (product) => product.productAttributes)
+  @ManyToOne(() => Product, (product) => product.productAttributes, { onDelete: 'CASCADE' })
   product: Product;
 
-  @ManyToOne(() => AttributeSub, (attributeSub) => attributeSub.productAttributes)
+  @ManyToOne(() => AttributeSub, (attributeSub) => attributeSub.productAttributes, { onDelete: 'CASCADE' })
   attributeSub: AttributeSub;
 
 }
