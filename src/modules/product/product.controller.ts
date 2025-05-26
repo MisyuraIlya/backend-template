@@ -36,7 +36,7 @@ export class ProductController implements CrudController<Product> {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('itemsPerPage', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query() query: Record<string, any>,
-    @Query('userId', ParseIntPipe) userId: number,
+    @Query('userId') userId: number | undefined,
     @Query('search') search?: string,
   ) {
     const filters: Record<string, string> = {};

@@ -109,6 +109,10 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
                 const obj: CategoryDto = {
                     categoryId: itemRec.FTCODE,
                     categoryName: itemRec.FTNAME,
+                    englishCategoryName:null,
+                    parentId:null,
+                    parentName: null,
+                    lvlNumber: 1, 
                 };
                 result.push(obj);
             }

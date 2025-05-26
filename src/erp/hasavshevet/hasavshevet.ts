@@ -51,7 +51,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         try {
           const response = await axios.post(`${this.url}${table}`, object, {
             headers: {
-              'Authorization': `Bearer ${process.env.ERP_TOKEN}`,
+              'Authorization': `${this.password}`,
               'Content-Type': 'application/json',
             },
             timeout: 60000, 
@@ -68,25 +68,34 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
    
 
     async GetCategories(): Promise<CategoryDto[]> {
-        const requestData = { dbName: process.env.ERP_DB }; 
+        const requestData = { dbName: this.erpDb, noteIds: ["29"] }; 
         try {
-          const response = await this.PostRequest(requestData, '/custom-categories');
+          const response = await this.PostRequest(requestData, '/api/categories');
     
           const categories: CategoryDto[] = [];
     
-          response.results.forEach((category: any) => {
-            category.categories.forEach((categoryItem: any) => {
-              if (categoryItem.NoteHebrew && categoryItem.NoteEnglish) {
-                const categoryDto: CategoryDto = {
-                  categoryId: categoryItem.NoteHebrew,
-                  categoryName: categoryItem.NoteHebrew,
-                  englishCategoryName: categoryItem.NoteEnglish,
-                };
-                categories.push(categoryDto);
-              }
-            });
+          response.categoriesAndSubCategories.forEach((category: any) => {
+            const obj:CategoryDto = {
+              categoryName: category.category,
+              englishCategoryName: null,
+              categoryId: category.category,
+              parentId: null,
+              parentName: null,
+              lvlNumber: 1,
+            }
+            categories.push(obj);
+            category?.subCategories?.forEach((subCategory: any) => {
+              const subObj: CategoryDto = {
+                categoryName: subCategory,
+                englishCategoryName: null,
+                categoryId: subCategory,
+                parentId: category.category,
+                parentName: category.category,
+                lvlNumber: 2,
+              };
+              categories.push(subObj);
+            })
           });
-    
           return categories;
         } catch (error) {
           const message = error.response
@@ -98,28 +107,31 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetProducts(pageSize?: number, skip?: number): Promise<ProductDto[]> {
         const requestData = {
-        dbName: process.env.ERP_DB,
-        sortGroups: [],
-        noteIds: ["17"], 
-
+          dbName: this.erpDb,
+          sortGroups: [],
+          noteIds: ["29"], 
         ...(pageSize && skip ? { page: String(skip), pageSize: String(pageSize) } : {}),
         };
 
         try {
-        const response = await this.PostRequest(requestData, "/products");
+        const response = await this.PostRequest(requestData, "/api/products");
 
         const products: ProductDto[] = [];
 
         response.products.forEach((product: any) => {
+            const parsedCategory = product?.Note ? product.Note.split(' - ') : [];
             const dto: ProductDto = {
-            sku: product.ItemKey,
-            title: product.ItemName ?? product.ItemKey,
-            titleEnglish: product.ForignName,
-            barcode: product.BarCode,
-            categoryLvl1Id: product.Note,
-            categoryLvl1Name: product.NoteName,
-            status: true, 
-            intevntory_managed: true,
+              sku: product.ItemKey,
+              title: product.ItemName ?? product.ItemKey,
+              titleEnglish: product.ForignName,
+              barcode: product.BarCode,
+              categoryLvl1Id: parsedCategory[0] || null,
+              categoryLvl1Name: parsedCategory[0] || null,
+              categoryLvl2Id: parsedCategory[1] || null,
+              categoryLvl2Name: parsedCategory[1] || null,
+              status: true, 
+              intevntory_managed: true,
+            
             };
 
             products.push(dto);
@@ -135,16 +147,24 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
     }
 
     async GetUsers(): Promise<UserDto[]> {
-        const requestData = {
-          dbName: process.env.ERP_DB,
-          sortGroups: []
-        };
-    
+      const requestData = [
+        {
+          dbName: 'salgan17new',
+          sortGroups: Array.from({ length: 21 }, (_, i) => (250 + i).toString()),
+        },
+        {
+          dbName: 'dip17new',
+          sortGroups: Array.from({ length: 50 }, (_, i) => (200 + i).toString()),
+        },
+      ];
+
+      const users: UserDto[] = [];
+
+      for (const element of requestData) {
+        console.log('element',element)
         try {
-          const response = await this.PostRequest(requestData, '/users');
-    
-          const users: UserDto[] = [];
-    
+          const response = await this.PostRequest(element, '/api/users');
+
           response.users.forEach((user: any) => {
             const userDto: UserDto = {
               userExId: user.AccountKey,
@@ -156,20 +176,20 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
               hp: user.DeductFile,
               maxObligo: user.MaxObligo,
               agentCode: user.Agent,
-              isBlocked: false, 
+              isBlocked: false,
               salesCurrency: user.SalesCurrency,
               payCode: user.BalanceCode,
               payDes: user.Balance,
               maxCredit: user.TFtalDiscount,
               taxCode: user.CreditTermsCode,
-              isVatEnabled: true, 
-              subUsers: [] 
+              isVatEnabled: true,
+              subUsers: [],
             };
-    
+
             response.contacts.forEach((subRec: any) => {
               if (subRec.AccountKey === user.AccountKey) {
-                const subUser: UserDto = {
-                  userExId: user.AccountKey,
+                userDto.subUsers.push({
+                  userExId: subRec.AccountKey,
                   name: subRec.CName,
                   phone: subRec.CPhone,
                   address: user.Address,
@@ -185,22 +205,22 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
                   taxCode: user.CreditTermsCode,
                   isVatEnabled: true,
                   subUsers: [],
-                };
-                userDto.subUsers.push(subUser);
+                });
               }
             });
-    
+
             users.push(userDto);
           });
-    
-          return users;
-        } catch (error) {
+        } catch (error: any) {
           const message = error.response
             ? `HTTP error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
             : `Error: ${error.message}`;
           throw new Error(message);
         }
+      }
+      return users;
     }
+
 
     // @ts-ignore
     async FindUser({ userExtId, phone }: { userExtId: string; phone: string; }): Promise<UserDto> {
@@ -224,12 +244,12 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetPriceListDetailed(): Promise<PriceListDetailedDto[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           order: 'ASC', 
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/prices');
+          const response = await this.PostRequest(requestData, '/api/prices');
           const priceListsDetailed: PriceListDetailedDto[] = [];
     
           response.prices.forEach((priceItem: any) => {
@@ -263,11 +283,11 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetAgents(): Promise<UserDto[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/agents');
+          const response = await this.PostRequest(requestData, '/api/agents');
           const users: UserDto[] = [];
     
           response.agents.forEach((agent: any) => {
@@ -303,7 +323,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         search?: string
       ): Promise<DocumentsDto> {
         const requestData: any = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           dateFrom: dateFrom.toISOString().split('T')[0], 
           dateTo: dateTo.toISOString().split('T')[0],     
           page: currentPage,
@@ -314,7 +334,7 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/documents');
+          const response = await this.PostRequest(requestData, '/api/documents');
     
           const result: DocumentsDto = {
             documents: [],
@@ -357,13 +377,13 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
       userExId?:      string
     ): Promise<DocumentItemsDto> {
       const requestData = {
-        dbName:       process.env.ERP_DB,
+        dbName:       this.erpDb,
         documentId:   documentNumber,
         documentType: documentType,
       };
 
       try {
-        const response = await this.PostRequest(requestData, '/documents-items');
+        const response = await this.PostRequest(requestData, '/api/documents-items');
 
         const result: DocumentItemsDto = {
           products:           [],
@@ -410,14 +430,14 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetCartesset(userExId: string, dateFrom: Date, dateTo: Date): Promise<dynamicTableDto> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           dateFrom: dateFrom.toISOString().split('T')[0], 
           dateTo: dateTo.toISOString().split('T')[0],   
           userExtId: userExId,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/cartesset');
+          const response = await this.PostRequest(requestData, '/api/cartesset');
     
           const result: dynamicTableDto = {
             columns: [
@@ -481,14 +501,14 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetDebit(userExId: string, dateFrom: Date, dateTo: Date): Promise<dynamicTableDto> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           dateFrom: dateFrom.toISOString().split('T')[0],
           dateTo: dateTo.toISOString().split('T')[0],
           userExtId: userExId,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/debits');
+          const response = await this.PostRequest(requestData, '/api/debits');
     
           const result: dynamicTableDto = {
             columns: [
@@ -556,13 +576,13 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async PurchaseHistoryByUserAndSku(userExtId: string, sku: string): Promise<PurchaseHistoryItem[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           userExtId: userExtId,
           sku: sku,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/purchase-history');
+          const response = await this.PostRequest(requestData, '/api/purchase-history');
     
           const purchaseHistoryItems: PurchaseHistoryItem[] = [];
           response.purchases.forEach((purchase: any) => {
@@ -589,47 +609,50 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
     }
     
 
-    async GetAgentStatistic(agentId: string, dateFrom: string, dateTo: string): Promise<AgentStatisticDto> {
-        const requestData = {
-          dbName: process.env.ERP_DB,
-          agentId: agentId,
-          dateFrom: dateFrom,
-          dateTo: dateTo,
-        };
-    
-        try {
-          const response = await this.PostRequest(requestData, '/agent-profile');
-    
-        const result: AgentStatisticDto = {
-          totalPriceMonth:              response.totalPriceMonth,
-          totalInvoicesMonth:           response.totalInvoicesMonth,
-          totalPriceToday:              response.totalPriceToday,
-          totalInvoicesToday:           response.totalInvoicesToday,
-          totalPriceChoosedDates:       response.totalPriceChoosedDates,
-          totalInvoicesChoosedDates:    response.totalInvoicesChoosedDates,
-          averageTotalBasketMonth:      response.averageTotalBasketMonth,
-          averageTotalBasketToday:      response.averageTotalBasketToday,
-          averageTotalBasketChoosedDates: response.averageTotalBasketChoosedDates,
-          monthlyTotals:                response.monthlyTotals,
-        };
-    
-          return result;
-        } catch (error) {
-          const message = error.response
-            ? `HTTP error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
-            : `Error: ${error.message}`;
-          throw new Error(message);
-        }
+    async GetAgentStatistic(
+      agentId: string,
+      dateFrom: string,
+      dateTo: string
+    ): Promise<AgentStatisticDto> {
+      const requestData = {
+        dbName: this.erpDb,
+        agentId,
+        dateFrom,
+        dateTo,
+      };
+
+      let raw: any = {};
+      try {
+        raw = await this.PostRequest(requestData, '/api/agent-profile');
+      } catch (err) {
+        console.error('Failed to fetch agent stats', { requestData, err });
+      }
+
+      const result: AgentStatisticDto = {
+        totalPriceMonth:               raw.totalPriceMonth              ?? 0,
+        totalInvoicesMonth:            raw.totalInvoicesMonth           ?? 0,
+        totalPriceToday:               raw.totalPriceToday              ?? 0,
+        totalInvoicesToday:            raw.totalInvoicesToday           ?? 0,
+        totalPriceChoosedDates:        raw.totalPriceChoosedDates       ?? 0,
+        totalInvoicesChoosedDates:     raw.totalInvoicesChoosedDates    ?? 0,
+        averageTotalBasketMonth:       raw.averageTotalBasketMonth      ?? 0,
+        averageTotalBasketToday:       raw.averageTotalBasketToday      ?? 0,
+        averageTotalBasketChoosedDates:raw.averageTotalBasketChoosedDates ?? 0,
+        monthlyTotals:                 Array.isArray(raw.monthlyTotals) ? raw.monthlyTotals : [],
+      };
+
+      return result;
     }
+
 
     async SalesKeeperAlert(userExtId: string): Promise<SalesKeeperAlertDto> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           userExtId: userExtId,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/sales-cycles');
+          const response = await this.PostRequest(requestData, '/api/sales-cycles');
     
           const result: SalesKeeperAlertDto = {
             sumPreviousMonthCurrentYear: response.sumPreviousMonthCurrentYear,
@@ -648,12 +671,12 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async SalesQuantityKeeperAlert(userExtId: string): Promise<SalesQuantityKeeperAlertLineDto[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           userExtId: userExtId,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/items-sales-cycles');
+          const response = await this.PostRequest(requestData, '/api/items-sales-cycles');
     
           const alertLines: SalesQuantityKeeperAlertLineDto[] = [];
     
@@ -679,15 +702,13 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetPriceOnline(userExtId: string, sku: string | string[], priceListNumber: string | string[]): Promise<PriceDto[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           skuList: Array.isArray(sku) ? sku : [sku],
           externalUserId: userExtId,
           priceListNumber: Array.isArray(priceListNumber) ? priceListNumber : [priceListNumber] 
         };
-    
         try {
-          const response = await this.PostRequest(requestData, '/online-prices');
-    
+          const response = await this.PostRequest(requestData, '/api/online-prices');
           const prices: PriceDto[] = [];
     
           response.prices.forEach((price: any) => {
@@ -715,13 +736,12 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetStockOnline(sku: string | string[], warehouse?: string): Promise<StockDto[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           skus: Array.isArray(sku) ? sku : [sku], 
           warehouse: warehouse || null, 
         };
-    
         try {
-          const response = await this.PostRequest(requestData, '/stocks');
+          const response = await this.PostRequest(requestData, '/api/stocks');
     
           const stocks: StockDto[] = [];
     
@@ -755,12 +775,12 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetUserProfile(userExtId: string): Promise<dynamicTableDto> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           userExtId: userExtId
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/user-profile');
+          const response = await this.PostRequest(requestData, '/api/user-profile');
     
           const result: dynamicTableDto = {
             columns: [
@@ -818,12 +838,12 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetPurchaseDelivery(sku: string): Promise<PurchaseDeliveryItemDto[]> {
         const requestData = {
-          dbName: process.env.ERP_DB,
+          dbName: this.erpDb,
           sku: sku,
         };
     
         try {
-          const response = await this.PostRequest(requestData, '/purchase-delivery');
+          const response = await this.PostRequest(requestData, '/api/purchase-delivery');
           const purchaseDeliveryItems: PurchaseDeliveryItemDto[] = [];
           response.items.forEach((itemRec: any) => {
             const purchaseDeliveryItem: PurchaseDeliveryItemDto = {
@@ -851,13 +871,13 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
 
     async GetWarehouseDetailedBySku(sku: string, warehouses?: string[]): Promise<WarehousesItemDetailedDto[]> {
         const requestData = {
-            dbName: process.env.ERP_DB,
+            dbName: this.erpDb,
             sku: sku,
             warehouses: warehouses
         };
-      
+        console.log('requestData',requestData)
         try {
-            const response = await this.PostRequest(requestData, '/purchases');
+            const response = await this.PostRequest(requestData, '/api/purchases');
             const warehouseDetails: WarehousesItemDetailedDto[] = [];
         
             response.items.forEach((warehouse: any) => {

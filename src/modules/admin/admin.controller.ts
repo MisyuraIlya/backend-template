@@ -14,8 +14,8 @@ import { Admin } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Controller('admin')
-@UseGuards(RolesGuard)
-@Admin()
+// @UseGuards(RolesGuard)
+// @Admin()
 export class AdminController {
   constructor(
     private readonly initialization: InitializationService,

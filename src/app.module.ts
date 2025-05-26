@@ -162,10 +162,10 @@ import { PushSubscription } from './modules/push-subscription/entities/push-subs
     AppService,
     ErpManager,
     LoggingInterceptor,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard,
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

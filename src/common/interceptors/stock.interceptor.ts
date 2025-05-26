@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class StockInterceptor implements NestInterceptor {
   private readonly isOnline: boolean;
+  private readonly wareHouseUsage: string | null;
 
   constructor(
     private readonly reflector: Reflector,
@@ -22,6 +23,7 @@ export class StockInterceptor implements NestInterceptor {
     private readonly erpManager: ErpManager,
   ) {
     this.isOnline = this.config.get<boolean>('IS_STOCK_ONLINE') ?? true;
+    this.wareHouseUsage = this.config.get<string>('WAREHOUSE_USAGE') ?? null;
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -76,7 +78,7 @@ export class StockInterceptor implements NestInterceptor {
     if(skus.length === 0){
       return products
     }
-    const response = await this.erpManager.GetStockOnline(skus)
+    const response = await this.erpManager.GetStockOnline(skus, this.wareHouseUsage ?? '')
     products?.forEach((item) => {
       const stock = response.find((x) => x.sku == item.sku)
       item.stock = stock?.stock ?? 0

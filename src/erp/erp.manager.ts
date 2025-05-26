@@ -38,7 +38,7 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         const erpDb = this.configService.get<string>('ERP_DB')!
         const url = this.configService.get<string>('ERP_URL')!
 
-        if(erpType  === 'Priority'){
+        if(erpType  === 'PRIORITY'){
             this.erp = new Priority({username,password,erpDb,url})
         } else if(erpType === 'SAP') {
             this.erp = new Sap({username,password,erpDb,url})

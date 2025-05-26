@@ -10,9 +10,12 @@ import {
 } from './dto/catalog.dto';
 import { ErpManager } from 'src/erp/erp.manager';
 import { User } from '../user/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProductService extends TypeOrmCrudService<Product> {
+  private readonly wareHouseUsage: string | null;
+
   constructor(
     private readonly erpManager: ErpManager,
     @InjectRepository(Product)
@@ -21,8 +24,10 @@ export class ProductService extends TypeOrmCrudService<Product> {
     private readonly attributeMainRepo: Repository<AttributeMain>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly config: ConfigService,
   ) {
     super(productRepo);
+    this.wareHouseUsage = this.config.get<string>('WAREHOUSE_USAGE') ?? null;
   }
 
   async getCatalog(
@@ -198,7 +203,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
       throw new NotFoundException(`Product with id ${productId} not found`);
     }
 
-    return this.erpManager.GetWarehouseDetailedBySku(product.sku)
+    return this.erpManager.GetWarehouseDetailedBySku(product.sku,[this.wareHouseUsage ?? ''])
   }
 
   async reorder(items: { id?: number; orden: number }[]): Promise<Product[]> {

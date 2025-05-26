@@ -4,12 +4,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ErpManager } from "src/erp/erp.manager";
 import { Category } from "src/modules/category/entities/category.entity";
-import { ProductDto } from "src/erp/dto/product.dto";
+import { CategoryDto } from "src/erp/dto/category.dto";
 
 @Injectable()
 export class GetCategoriesService {
   private readonly logger = new Logger(GetCategoriesService.name);
-  private readonly PAGE_SIZE = 100;
   public isSyncing = false;
 
   constructor(
@@ -20,78 +19,33 @@ export class GetCategoriesService {
 
 
   public async sync(): Promise<void> {
-    let skip = 0;
-
-    while (true) {
-      this.logger.log(`Fetching ERP products batch (skip=${skip}, top=${this.PAGE_SIZE})`);
-      const batch = await this.erpManager.GetProducts(this.PAGE_SIZE, skip);
-
-      if (!batch || batch.length === 0) {
-        this.logger.log('No more products to process; sync complete');
-        break;
-      }
-
-      const validBatch = batch.filter((dto): dto is ProductDto => dto != null);
-
-      for (const dto of validBatch) {
-        try {
-          if (dto.categoryLvl1Id && dto.categoryLvl1Name) {
-            let cat1 = await this.categoryRepository.findOne({
-              where: { extId: dto.categoryLvl1Id, lvlNumber: 1 },
-            });
-            if (!cat1) {
-              cat1 = new Category();
-              cat1.extId = dto.categoryLvl1Id;
-              cat1.lvlNumber = 1;
-              cat1.isPublished = true;
-            }
-            cat1.title = dto.categoryLvl1Name;
-            await this.categoryRepository.save(cat1);
-
-            let cat2: Category | null = null;
-            if (dto.categoryLvl2Id && dto.categoryLvl2Name) {
-              cat2 = await this.categoryRepository.findOne({
-                where: { extId: dto.categoryLvl2Id, lvlNumber: 2 },
-              });
-              if (!cat2) {
-                cat2 = new Category();
-                cat2.extId = dto.categoryLvl2Id;
-                cat2.lvlNumber = 2;
-                cat2.isPublished = true;
-                cat2.parent = cat1;
-              }
-              cat2.title = dto.categoryLvl2Name;
-              cat2.parent = cat1;
-              await this.categoryRepository.save(cat2);
-            }
-
-            if (dto.categoryLvl3Id && dto.categoryLvl3Name) {
-              let cat3 = await this.categoryRepository.findOne({
-                where: { extId: dto.categoryLvl3Id, lvlNumber: 3 },
-              });
-              if (!cat3) {
-                cat3 = new Category();
-                cat3.extId = dto.categoryLvl3Id;
-                cat3.lvlNumber = 3;
-                cat3.isPublished = true;
-                cat3.parent = cat2 ?? cat1;
-              }
-              cat3.title = dto.categoryLvl3Name;
-              cat3.parent = cat2 ?? cat1;
-              await this.categoryRepository.save(cat3);
-            }
-          }
-        } catch (err) {
-          this.logger.error(
-            `Failed to process product DTO ${JSON.stringify(dto)}`,
-            (err as Error).stack,
-          );
-          
+    const data = await this.erpManager.GetCategories();
+    data?.forEach(async (element: CategoryDto) => {
+      if(element?.categoryId){
+        let category = await this.categoryRepository.findOne({
+          where: { extId: element.categoryId },
+        })
+        if(!category){
+          category = new Category();
+          category.extId = element.categoryId;
         }
+        category.title = element.categoryName || '';
+        category.englishTitle = element.englishCategoryName || '';
+        category.isPublished =  true;
+        category.lvlNumber = element.lvlNumber || 0;
+        if(element.parentId){
+          const parentCategory = await this.categoryRepository.findOne({
+            where: { extId: element.parentId },
+          });
+          if (parentCategory) {
+            category.parent = parentCategory;
+          } 
+        }
+        this.categoryRepository.save(category)
       }
 
-      skip += this.PAGE_SIZE;
-    }
+    });
+
   }
 
 //   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })

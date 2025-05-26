@@ -27,7 +27,7 @@ export class GetProductsService {
     while (true) {
       this.logger.log(`Fetching ERP products batch (skip=${skip}, top=${this.PAGE_SIZE})`);
       const batch = await this.erpManager.GetProducts(this.PAGE_SIZE, skip) ?? [];
-
+      console.log('batch',batch)
       if (!batch.length) {
         this.logger.log('No more products to process; sync complete');
         break;
