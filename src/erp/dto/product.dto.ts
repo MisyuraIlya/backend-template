@@ -1,3 +1,5 @@
+import { ProductPackageDto } from "./productPackage.dto";
+
 export interface ProductDto {
   sku?: string | null;
   barcode?: string | null;
@@ -17,6 +19,7 @@ export interface ProductDto {
   intevntory_managed: boolean;
   parent?: string | null;
   packQuantity?: number | null;
+  packages?: ProductPackageDto[]
 
   // CUSTOM
   isHumane?: boolean | null;

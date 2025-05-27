@@ -21,6 +21,8 @@ import { CronInterface } from "../interfaces/cron.interface";
 import { OnlineInterface } from "../interfaces/online.interface";
 import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
 import { User } from "src/modules/user/entities/user.entity";
+import { VarietyDto } from "../dto/variety.dto";
+import { ProductPackage } from "src/modules/product-package/entities/product.entity";
 
 
 export class Sap implements CoreInterface, CronInterface, OnlineInterface {
@@ -722,7 +724,11 @@ export class Sap implements CoreInterface, CronInterface, OnlineInterface {
         return uniqueResult;
     }
     
-    async GetVariety(): Promise<string[]> {
+    async GetVariety(): Promise<VarietyDto[]> {
+      return []
+    }
+
+    async GetProductPackages(): Promise<ProductPackage[]> {
       return []
     }
 }

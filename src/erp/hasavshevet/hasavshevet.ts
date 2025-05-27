@@ -20,6 +20,9 @@ import { CoreInterface } from "../interfaces/core.interface";
 import { CronInterface } from "../interfaces/cron.interface";
 import { OnlineInterface } from "../interfaces/online.interface";
 import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
+import { VarietyDto } from "../dto/variety.dto";
+import { ProductPackage } from "src/modules/product-package/entities/product.entity";
+import { ProductPackageDto } from "../dto/productPackage.dto";
 
 export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterface {
     
@@ -131,8 +134,21 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
               categoryLvl2Name: parsedCategory[1] || null,
               status: true, 
               intevntory_managed: true,
-            
             };
+
+            dto.packages = [];
+            response.extraSums?.forEach(element => {
+              if (element.KeF == product.ItemKey) {
+                dto.packages!.push({
+                  sku: element.KeF,
+                  quantity: element.SuF
+                });
+              }
+            });
+
+            if(product.ItemKey === '60110'){
+              console.log(dto)
+            }
 
             products.push(dto);
         });
@@ -149,11 +165,11 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
     async GetUsers(): Promise<UserDto[]> {
       const requestData = [
         {
-          dbName: 'salgan17new',
+          dbName: this.erpDb,
           sortGroups: Array.from({ length: 21 }, (_, i) => (250 + i).toString()),
         },
         {
-          dbName: 'dip17new',
+          dbName: this.erpDb,
           sortGroups: Array.from({ length: 50 }, (_, i) => (200 + i).toString()),
         },
       ];
@@ -161,7 +177,6 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
       const users: UserDto[] = [];
 
       for (const element of requestData) {
-        console.log('element',element)
         try {
           const response = await this.PostRequest(element, '/api/users');
 
@@ -227,9 +242,39 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
       
     }
 
-    async GetVariety(): Promise<string[]> {
-        // Implement the logic here
-        return []
+    async GetVariety(): Promise<VarietyDto[]> {
+        const requestData = [
+        {
+          dbName: this.erpDb,
+          sortGroups: Array.from({ length: 21 }, (_, i) => (250 + i).toString()),
+        },
+        {
+          dbName: this.erpDb,
+          sortGroups: Array.from({ length: 50 }, (_, i) => (200 + i).toString()),
+        },
+      ];
+
+      const result: VarietyDto[] = [];
+
+      for (const element of requestData) {
+        try {
+          const response = await this.PostRequest(element, '/api/varieties-users');
+
+          response.userVarieties.forEach((ele: any) => {
+            const userDto: VarietyDto = {
+              userExtId: ele.AccountKey,
+              sku: ele.ItemKey,
+            };
+            result.push(userDto);
+          });
+        } catch (error: any) {
+          const message = error.response
+            ? `HTTP error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
+            : `Error: ${error.message}`;
+          throw new Error(message);
+        }
+      }
+      return result;
     }
 
     async GetPriceList(): Promise<PriceListDto[]> {
@@ -900,5 +945,10 @@ export class Hasavshevet implements CoreInterface, CronInterface, OnlineInterfac
             : `Error: ${error.message}`;
             throw new Error(message);
         }
+    }
+
+    async GetProductPackages(): Promise<ProductPackage[]> {
+      //this fetched with GetProducts
+      return []
     }
 }

@@ -25,6 +25,9 @@ import { GetAttributeProducts } from './GetAttributeProducts';
 import { ProductAttribute } from 'src/modules/product-attribute/entities/product-attribute.entity';
 import { InitializationService } from './Initialization';
 import { HomeEdit } from 'src/modules/home-edit/entities/home-edit.entity';
+import { GetVarietiesService } from './GetVarieties';
+import { Variety } from 'src/modules/variety/entities/variety.entity';
+import { ProductPackage } from 'src/modules/product-package/entities/product.entity';
 
 @Module({
   imports: [
@@ -39,6 +42,8 @@ import { HomeEdit } from 'src/modules/home-edit/entities/home-edit.entity';
       AttributeSub,
       ProductAttribute,
       HomeEdit,
+      Variety,
+      ProductPackage
     ]),
   ],
   providers: [
@@ -53,7 +58,8 @@ import { HomeEdit } from 'src/modules/home-edit/entities/home-edit.entity';
     GetProductsService,
     GetUsersService,
     GetAttributeProducts,
-    InitializationService
+    InitializationService,
+    GetVarietiesService
   ],
   exports: [
     GetAgentService,
@@ -66,7 +72,8 @@ import { HomeEdit } from 'src/modules/home-edit/entities/home-edit.entity';
     GetProductsService,
     GetUsersService,
     GetAttributeProducts,
-    InitializationService
+    InitializationService,
+    GetVarietiesService
   ],
 })
 export class CronModule {}

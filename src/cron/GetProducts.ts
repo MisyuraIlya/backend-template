@@ -6,6 +6,7 @@ import { ErpManager } from "src/erp/erp.manager";
 import { Product } from "src/modules/product/entities/product.entity";
 import { Category } from "src/modules/category/entities/category.entity";
 import { ProductDto } from "src/erp/dto/product.dto";
+import { ProductPackage } from "src/modules/product-package/entities/product.entity";
 
 @Injectable()
 export class GetProductsService {
@@ -18,6 +19,8 @@ export class GetProductsService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(ProductPackage)
+    private readonly productPackageRepository: Repository<ProductPackage>,
     private readonly erpManager: ErpManager,
   ) {}
 
@@ -27,7 +30,6 @@ export class GetProductsService {
     while (true) {
       this.logger.log(`Fetching ERP products batch (skip=${skip}, top=${this.PAGE_SIZE})`);
       const batch = await this.erpManager.GetProducts(this.PAGE_SIZE, skip) ?? [];
-      console.log('batch',batch)
       if (!batch.length) {
         this.logger.log('No more products to process; sync complete');
         break;
@@ -75,6 +77,24 @@ export class GetProductsService {
               where: { extId: dto.categoryLvl3Id, lvlNumber: 3 },
             });
             if (cat3) prod.categoryLvl3 = cat3;
+          }
+
+          if(dto?.packages && dto?.packages?.length > 0){  
+            dto.packages?.forEach(async (item) => {
+              let packageEntity = await this.productPackageRepository.findOne({
+                where: {
+                  product: prod,
+                  quantity: item.quantity
+                }
+              })
+              if(!packageEntity){
+                packageEntity = new ProductPackage()
+                packageEntity.product = prod
+                packageEntity.quantity = item.quantity
+                this.productPackageRepository.save(packageEntity)
+              }
+           
+            })
           }
 
           await this.productRepository.save(prod);

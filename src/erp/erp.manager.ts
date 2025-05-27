@@ -24,6 +24,8 @@ import { OnlineInterface } from "./interfaces/online.interface";
 import { Priority } from "./priority/priority";
 import { Sap } from "./sap/sap";
 import { ConfigService } from '@nestjs/config';
+import { VarietyDto } from "./dto/variety.dto";
+import { ProductPackage } from "src/modules/product-package/entities/product.entity";
 
 @Injectable()
 export class ErpManager implements CoreInterface, CronInterface, OnlineInterface {
@@ -72,7 +74,7 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
         return this.erp.GetUsers();
     }
 
-    public async GetVariety(): Promise<string[]> {
+    public async GetVariety(): Promise<VarietyDto[]> {
         return this.erp.GetVariety();
     }
 
@@ -177,5 +179,9 @@ export class ErpManager implements CoreInterface, CronInterface, OnlineInterface
 
     public async GetWarehouseDetailedBySku(sku: string, warehouses?: string[]): Promise<WarehousesItemDetailedDto[]> {
         return this.erp.GetWarehouseDetailedBySku(sku,warehouses);
+    }
+
+    public async GetProductPackages(): Promise<ProductPackage[]> {
+        return this.erp.GetProductPackages();
     }
 }

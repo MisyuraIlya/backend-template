@@ -67,6 +67,8 @@ import { OfflineModule } from './modules/offline/offline.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PushSubscriptionModule } from './modules/push-subscription/push-subscription.module';
 import { PushSubscription } from './modules/push-subscription/entities/push-subscription.entity';
+import { ProductPackage } from './modules/product-package/entities/product.entity';
+import { ProductPackageModule } from './modules/product-package/product-package.module';
 
 @Module({
   imports: [
@@ -116,7 +118,8 @@ import { PushSubscription } from './modules/push-subscription/entities/push-subs
           Variety,
           AgentObjective,
           AgentTarget,
-          PushSubscription
+          PushSubscription,
+          ProductPackage
         ],
         synchronize: true,
       }),
@@ -155,7 +158,8 @@ import { PushSubscription } from './modules/push-subscription/entities/push-subs
     LoggerModule,
     SupportModule,
     OfflineModule,
-    PushSubscriptionModule
+    PushSubscriptionModule,
+    ProductPackageModule
   ],
   controllers: [AppController],
   providers: [

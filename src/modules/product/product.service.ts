@@ -44,6 +44,7 @@ export class ProductService extends TypeOrmCrudService<Product> {
       .leftJoinAndSelect('p.categoryLvl1', 'cat1')
       .leftJoinAndSelect('p.categoryLvl2', 'cat2')
       .leftJoinAndSelect('p.categoryLvl3', 'cat3')
+      .leftJoinAndSelect('p.productPackages', 'pac')
       .leftJoinAndSelect('p.productAttributes', 'pa')
       .leftJoinAndSelect('pa.attributeSub', 's')
       .leftJoinAndSelect('s.attribute', 'm')

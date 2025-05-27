@@ -23,6 +23,8 @@ import axios from 'axios';
 import { WarehousesItemDetailedDto } from "../dto/warehouse.dto";
 import { PriorityDocumentsService } from "./PriorityDocuments";
 import { BadRequestException } from "@nestjs/common";
+import { VarietyDto } from "../dto/variety.dto";
+import { ProductPackage } from "src/modules/product-package/entities/product.entity";
 
 export class Priority implements CoreInterface, CronInterface, OnlineInterface {
 
@@ -334,7 +336,7 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
         }
     }
 
-    async GetVariety(): Promise<string[]> {
+    async GetVariety(): Promise<VarietyDto[]> {
         // Implement the logic here
         return []
     }
@@ -1493,6 +1495,11 @@ export class Priority implements CoreInterface, CronInterface, OnlineInterface {
           console.error('Error fetching GetWarehouseDetailedBySku:', error);
           throw error; 
        } 
+      return []
+    }
+
+    public async GetProductPackages(): Promise<ProductPackage[]> {
+      //TODO
       return []
     }
 }

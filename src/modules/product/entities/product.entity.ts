@@ -21,6 +21,7 @@ import { PriceListDetailed } from 'src/modules/price-list-detailed/entities/pric
 import { ProductAttribute } from 'src/modules/product-attribute/entities/product-attribute.entity';
 import { BonusDetailed } from 'src/modules/bonus-detailed/entities/bonus-detailed.entity';
 import { HistoryDetailed } from 'src/modules/history-detailed/entities/history-detailed.entity';
+import { ProductPackage } from 'src/modules/product-package/entities/product.entity';
 
 @Entity()
 export class Product {
@@ -184,4 +185,10 @@ export class Product {
   @IsOptional()
   @IsArray()
   multiCategory: string[] | null;
+
+  @OneToMany(
+    () => ProductPackage,
+    (bonus) => bonus.product,
+  )
+  productPackages: ProductPackage[];
 }

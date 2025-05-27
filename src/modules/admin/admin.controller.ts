@@ -12,6 +12,7 @@ import { GetAttributeProducts } from 'src/cron/GetAttributeProducts';
 import { InitializationService } from 'src/cron/Initialization';
 import { Admin } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { GetVarietiesService } from 'src/cron/GetVarieties';
 
 @Controller('admin')
 // @UseGuards(RolesGuard)
@@ -28,7 +29,8 @@ export class AdminController {
     private readonly getPriceListUser: GetPriceListUserService,
     private readonly getAttributeMain: GetAttributesMainService,
     private readonly getAttributeSub: GetAttributesSubService,
-    private readonly getAttributeProducts: GetAttributeProducts
+    private readonly getAttributeProducts: GetAttributeProducts,
+    private readonly getVartieties: GetVarietiesService
   ) {}
 
   @Get('sync-all')
@@ -206,5 +208,19 @@ export class AdminController {
   @Get('status-attributes-product')
   getProductAttributesSyncStatus(): { isSyncing: boolean } {
     return { isSyncing: this.getAttributeProducts.isSyncing };
+  }
+
+  @Get('sync-varieties')
+  triggerVarietiesSync(): { status: boolean; message: string } {
+    if (this.getVartieties.isSyncing) {
+      return { status: false, message: 'Varieties sync already in progress' };
+    }
+    this.getVartieties.handleCron().catch(() => {});
+    return { status: true, message: 'Varieties sync started' };
+  }
+
+  @Get('status-varieties')
+  getVarietiesSyncStatus(): { isSyncing: boolean } {
+    return { isSyncing: this.getVartieties.isSyncing };
   }
 }
