@@ -23,7 +23,7 @@ async function bootstrap() {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     process.env.BACKEND_URL,
-    'https://digi-dev.work',
+    'https://www.dip1999.co.il',
   ];
   const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
 
