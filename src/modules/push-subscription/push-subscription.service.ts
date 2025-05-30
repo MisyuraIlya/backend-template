@@ -12,12 +12,11 @@ export class PushSubscriptionService {
     @InjectRepository(PushSubscription)
     private readonly subRepo: Repository<PushSubscription>,
   ) {
-    // Initialize with your VAPID keys & contact email
-    // webPush.setVapidDetails(
-    //   'mailto:you@your-domain.com',
-    //   process.env.VAPID_PUBLIC_KEY,
-    //   process.env.VAPID_PRIVATE_KEY,
-    // );
+    webPush.setVapidDetails(
+      process.env.VAPID_ADMIN_EMAIL,
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY,
+    );
   }
 
   async saveSubscription(

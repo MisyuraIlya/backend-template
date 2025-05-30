@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { PushSubscriptionService } from './push-subscription.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities/user.entity';
@@ -8,6 +8,11 @@ export class PushSubscriptionController {
   constructor(
     private readonly pushSubService: PushSubscriptionService,
   ) {}
+
+  @Get('vapidPublicKey')
+  getVapidPublicKey() {
+    return { publicKey: process.env.VAPID_PUBLIC_KEY };
+  }
 
   @Post('subscribe')
   async subscribe(
