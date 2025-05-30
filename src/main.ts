@@ -24,6 +24,7 @@ async function bootstrap() {
     process.env.FRONTEND_URL,
     process.env.BACKEND_URL,
     'https://www.dip1999.co.il',
+    'https://dip1999.co.il',
   ];
   const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
 

@@ -23,7 +23,6 @@ export class PushSubscriptionService {
     userId: number,
     { endpoint, keys: { p256dh, auth } }: any,
   ) {
-    // Remove any existing entry for this endpoint+user (to avoid duplicates)
     await this.subRepo.delete({ endpoint, user: { id: userId } });
     const sub = this.subRepo.create({
       endpoint,
@@ -66,8 +65,6 @@ export class PushSubscriptionService {
             `Push failed for ${sub.endpoint}: ${err.statusCode || err.message}`,
           );
           if (err.statusCode === 404 || err.statusCode === 410) {
-            // Subscription is gone—clean up
-            await this.subRepo.delete(sub.id);
             this.logger.log(`Removed stale subscription #${sub.id}`);
           }
         }

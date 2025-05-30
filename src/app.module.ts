@@ -166,10 +166,10 @@ import { ProductPackageModule } from './modules/product-package/product-package.
     AppService,
     ErpManager,
     LoggingInterceptor,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAuthGuard,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
