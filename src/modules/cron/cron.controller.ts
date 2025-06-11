@@ -35,6 +35,12 @@ export class CronController {
     return this.cronService.update(id, dto);
   }
 
+  @Get()
+  getAll() {
+    return this.cronService.findAll();
+  }
+
+
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,

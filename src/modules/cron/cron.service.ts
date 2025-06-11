@@ -142,8 +142,8 @@ export class CronService implements OnModuleInit {
     }
   }
 
-  async create(dto: { jobName: string; cronTime: string; isActive?: boolean }) {
-    const ent = this.cronRepo.create({ jobName: dto.jobName, cronTime: dto.cronTime, isActive: dto.isActive ?? true, status: false });
+  async create(dto: { jobName: string; label: string, cronTime: string; isActive?: boolean }) {
+    const ent = this.cronRepo.create({ jobName: dto.jobName, label: dto.label, cronTime: dto.cronTime, isActive: dto.isActive ?? true, status: false });
     await this.cronRepo.save(ent);
     if (ent.isActive) this.scheduleJob(ent.jobName, ent.cronTime);
     return ent;
@@ -169,6 +169,10 @@ export class CronService implements OnModuleInit {
     await this.cronRepo.save(ent);
     if (needsReschedule) this.scheduleJob(ent.jobName, ent.cronTime);
     return ent;
+  }
+
+  async findAll(): Promise<CronEntity[]> {
+    return this.cronRepo.find();
   }
 
   async findOne(id: number): Promise<CronEntity> {

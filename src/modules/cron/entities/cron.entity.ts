@@ -9,6 +9,9 @@ export class Cron {
     jobName: string;
 
     @Column()
+    label: string;
+
+    @Column()
     cronTime: string;
 
     @Column({ type: 'timestamp', nullable: true })

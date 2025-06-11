@@ -9,6 +9,9 @@ export class CreateCronDto {
   jobName: string;
 
   @IsString()
+  label: string;
+
+  @IsString()
   @Matches(CRON_REGEX, {
     message: 'cronTime must be a valid 6-field cron expression (sec min hr dom mon dow)',
   })
