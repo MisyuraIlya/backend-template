@@ -88,7 +88,6 @@ export class GetUsersService {
   }
 
 
-  // @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron(): Promise<void> {
     if (this.isSyncing) {
       this.logger.log('Previous sync still running — skipping this tick');

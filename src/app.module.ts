@@ -54,7 +54,7 @@ import { NotificationUser } from './modules/notification-user/entities/notificat
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ErpManager } from './erp/erp.manager';
 import { AdminModule } from './modules/admin/admin.module';
-import { CronModule } from './cron/cron.module';
+import { CronModule } from './modules/cron/cron.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DocumentModule } from './modules/document/document.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -69,6 +69,7 @@ import { PushSubscriptionModule } from './modules/push-subscription/push-subscri
 import { PushSubscription } from './modules/push-subscription/entities/push-subscription.entity';
 import { ProductPackage } from './modules/product-package/entities/product.entity';
 import { ProductPackageModule } from './modules/product-package/product-package.module';
+import { Cron } from './modules/cron/entities/cron.entity';
 
 @Module({
   imports: [
@@ -119,7 +120,8 @@ import { ProductPackageModule } from './modules/product-package/product-package.
           AgentObjective,
           AgentTarget,
           PushSubscription,
-          ProductPackage
+          ProductPackage,
+          Cron
         ],
         synchronize: true,
       }),

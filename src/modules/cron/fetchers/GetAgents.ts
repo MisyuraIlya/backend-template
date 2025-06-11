@@ -1,5 +1,4 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
@@ -16,9 +15,7 @@ export class GetAgentService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
     private readonly erpManager: ErpManager,
-
     @Inject(WINSTON_MODULE_NEST_PROVIDER)
     private readonly logger: LoggerService,
   ) {}
@@ -34,7 +31,6 @@ export class GetAgentService {
       });
       return;
     }
-
     for (const dto of agents) {
       let agent = await this.userRepository.findOne({
         where: {
@@ -42,7 +38,6 @@ export class GetAgentService {
           role: In([UsersTypes.AGENT, UsersTypes.SUPER_AGENT]),
         },
       });
-
       if (!agent) {
         agent = new User();
         agent.extId = dto.userExId;
@@ -50,19 +45,16 @@ export class GetAgentService {
         agent.isRegistered = false;
         agent.role = UsersTypes.AGENT;
       }
-
       agent.isAgent = true;
       agent.isBlocked = dto.isBlocked ?? false;
       agent.name = dto.name!;
       agent.search = `${dto.userExId} ${dto.name}`;
       agent.updatedAt = new Date();
       agent.isAllowOrder = true;
-
       await this.userRepository.save(agent);
     }
   }
 
-//   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
   public async handleCron(): Promise<void> {
     if (this.isSyncing) {
       this.logger.log({
@@ -73,13 +65,10 @@ export class GetAgentService {
       });
       return;
     }
-
     this.isSyncing = true;
     const start = Date.now();
-
     try {
       await this.sync();
-
       const durationMs = Date.now() - start;
       this.logger.log({
         context: 'CRON_AGENTS',
