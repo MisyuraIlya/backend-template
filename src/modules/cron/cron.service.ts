@@ -31,6 +31,8 @@ export class CronService implements OnModuleInit {
     { isSyncing: boolean; handleCron(): Promise<void> }
   > = {};
 
+  private manualExecution = false;
+
   constructor(
     @InjectRepository(CronEntity)
     private readonly cronRepo: Repository<CronEntity>,
@@ -66,9 +68,43 @@ export class CronService implements OnModuleInit {
     };
 
     const all = await this.cronRepo.find();
+    let mainCronTime = '0 0 23 * * *'; // Default to 11 PM
     for (const cfg of all) {
-      if (cfg.isActive) {
-        this.scheduleJob(cfg.jobName, cfg.cronTime);
+      if (cfg.isActive && cfg.cronTime) {
+        mainCronTime = cfg.cronTime;
+        break;
+      }
+    }
+    this.scheduleJob('MainCron', mainCronTime);
+  }
+
+  private async executeCrons() {
+    if (this.manualExecution) {
+      this.logger.warn('Manual execution is in progress. Skipping scheduled execution.');
+      return;
+    }
+
+    const crons = await this.cronRepo.find({ where: { isActive: true }, order: { order: 'ASC' } });
+
+    for (const cron of crons) {
+      try {
+        if (this.handlers[cron.jobName].isSyncing) {
+          this.logger.warn(`Cron job "${cron.jobName}" is already running. Skipping.`);
+          continue;
+        }
+
+        this.handlers[cron.jobName].isSyncing = true;
+        this.logger.debug(`Running cron "${cron.jobName}"`);
+        await this.handlers[cron.jobName].handleCron();
+        cron.lastFetchTime = new Date();
+        cron.status = false;
+      } catch (error) {
+        this.logger.error(`Error in cron job "${cron.jobName}": ${(error as Error).message}`, (error as Error).stack);
+        cron.lastFetchTime = new Date();
+        cron.status = true;
+      } finally {
+        this.handlers[cron.jobName].isSyncing = false;
+        await this.cronRepo.save(cron);
       }
     }
   }
@@ -79,90 +115,70 @@ export class CronService implements OnModuleInit {
       old.stop();
       this.schedulerRegistry.deleteCronJob(jobName);
     }
-    const job = new CronJob(cronTime, () => this.dispatch(jobName), null, false, 'Asia/Jerusalem');
+
+    const job = new CronJob(cronTime, () => this.executeCrons(), null, false, 'Asia/Jerusalem');
     this.schedulerRegistry.addCronJob(jobName, job);
     job.start();
-    this.logger.log(`Scheduled "${jobName}" → ${cronTime}`);
+    this.logger.log(`Scheduled cron execution for all jobs at "${cronTime}"`);
   }
 
-  private async dispatch(jobName: string) {
-    const cfg = await this.cronRepo.findOneBy({ jobName });
-    if (!cfg || !cfg.isActive) return;
+  async getStatus(jobName: string) {
+    const ent = await this.cronRepo.findOneBy({ jobName });
+    if (!ent) return { exists: false };
+    const handler = this.handlers[jobName];
+    return {
+      exists: true,
+      running: handler?.isSyncing ?? false,
+      lastFetchTime: ent.lastFetchTime,
+      status: ent.status,
+      duration: ent.duration,
+      isActive: ent.isActive,
+      id: ent.id,
+    };
+  }
 
-    if (this.handlers[jobName].isSyncing) {
-      this.logger.warn(`Cron job "${jobName}" is already running. Skipping.`);
-      return;
+  async run(jobName: string) {
+    if (this.manualExecution) {
+      this.logger.warn('Manual execution is already in progress.');
+      return { status: false, message: 'Manual execution is already in progress.' };
     }
 
-    this.handlers[jobName].isSyncing = true;
-    const start = Date.now();
+    if (!this.schedulerRegistry.doesExist('cron', jobName)) {
+      throw new NotFoundException(`No cron job "${jobName}"`);
+    }
+    this.manualExecution = true;
     try {
-      this.logger.debug(`Running cron "${jobName}"`);
-      try {
-        switch (jobName) {
-          case 'AGENTS_SYNC':
-            await this.getAgentSvc.handleCron();
-            break;
-          case 'ATTRIBUTE_PRODUCTS_SYNC':
-            await this.getAttributeProductsSvc.handleCron();
-            break;
-          case 'ATTRIBUTES_MAIN_SYNC':
-            await this.getAttributesMainSvc.handleCron();
-            break;
-          case 'ATTRIBUTES_SUB_SYNC':
-            await this.getAttributesSubSvc.handleCron();
-            break;
-          case 'CATEGORIES_SYNC':
-            await this.getCategoriesSvc.handleCron();
-            break;
-          case 'PRICE_LISTS_SYNC':
-            await this.getPriceListsSvc.handleCron();
-            break;
-          case 'PRICE_LIST_DETAILED_SYNC':
-            await this.getPriceListDetailedSvc.handleCron();
-            break;
-          case 'PRICE_LIST_USER_SYNC':
-            await this.getPriceListUserSvc.handleCron();
-            break;
-          case 'PRODUCT_PACKAGES_SYNC':
-            await this.getProductPackagesSvc.handleCron();
-            break;
-          case 'PRODUCTS_SYNC':
-            await this.getProductsSvc.handleCron();
-            break;
-          case 'USERS_SYNC':
-            await this.getUsersSvc.handleCron();
-            break;
-          case 'VARIETIES_SYNC':
-            await this.getVarietiesSvc.handleCron();
-            break;
-          default:
-            this.logger.warn(`No handler for "${jobName}"`);
-        }
-      } catch (error) {
-        this.logger.error(`Error in cron job "${jobName}": ${(error as Error).message}`, (error as Error).stack);
+      const cfg = await this.cronRepo.findOneBy({ jobName });
+      if (!cfg || !cfg.isActive) return { status: false, message: `Cron job "${jobName}" is not active.` };
+
+      if (this.handlers[jobName].isSyncing) {
+        this.logger.warn(`Cron job "${jobName}" is already running. Skipping.`);
+        return { status: false, message: `Cron job "${jobName}" is already running. Skipping.` };
       }
+
+      this.handlers[jobName].isSyncing = true;
+      this.logger.debug(`Running cron "${jobName}"`);
+      await this.handlers[jobName].handleCron();
       cfg.lastFetchTime = new Date();
       cfg.status = false;
-    } catch (err) {
-      cfg.lastFetchTime = new Date();
-      cfg.status = true;
-      this.logger.error(`Error in "${jobName}": ${(err as Error).message}`, (err as Error).stack);
-    } finally {
-      this.handlers[jobName].isSyncing = false;
-      cfg.duration = Date.now() - start;
       await this.cronRepo.save(cfg);
+      return { status: true, message: `Job "${jobName}" started` };
+    } catch (error) {
+      this.logger.error(`Error in cron job "${jobName}": ${(error as Error).message}`, (error as Error).stack);
+      return { status: false, message: `Error in cron job "${jobName}": ${(error as Error).message}` };
+    } finally {
+      this.manualExecution = false;
+      this.handlers[jobName].isSyncing = false;
     }
   }
 
   async create(dto: { jobName: string; label: string, cronTime: string; isActive?: boolean }) {
     const ent = this.cronRepo.create({ jobName: dto.jobName, label: dto.label, cronTime: dto.cronTime, isActive: dto.isActive ?? true, status: false });
     await this.cronRepo.save(ent);
-    if (ent.isActive) this.scheduleJob(ent.jobName, ent.cronTime);
     return ent;
   }
 
-  async update(id: number, dto: { cronTime?: string; isActive?: boolean }) {
+  async update(id: number, dto: { cronTime?: string; isActive?: boolean, order?: number }) {
     const ent = await this.cronRepo.findOneByOrFail({ id });
     let needsReschedule = false;
     if (dto.cronTime && dto.cronTime !== ent.cronTime) {
@@ -171,16 +187,11 @@ export class CronService implements OnModuleInit {
     }
     if (dto.isActive !== undefined && dto.isActive !== ent.isActive) {
       ent.isActive = dto.isActive;
-      if (!ent.isActive) {
-        const job = this.schedulerRegistry.getCronJob(ent.jobName);
-        job.stop();
-        this.schedulerRegistry.deleteCronJob(ent.jobName);
-      } else {
-        needsReschedule = true;
-      }
+    }
+    if (dto.order !== undefined && dto.order !== ent.order) {
+      ent.order = dto.order;
     }
     await this.cronRepo.save(ent);
-    if (needsReschedule) this.scheduleJob(ent.jobName, ent.cronTime);
     return ent;
   }
 
@@ -190,28 +201,5 @@ export class CronService implements OnModuleInit {
 
   async findOne(id: number): Promise<CronEntity> {
     return this.cronRepo.findOneByOrFail({ id });
-  }
-
-  async getStatus(jobName: string) {
-    const ent = await this.cronRepo.findOneBy({ jobName });
-    if (!ent) return { exists: false };
-    const handler = this.handlers[jobName];
-    return { 
-      exists: true, 
-      running: handler?.isSyncing ?? false, 
-      lastFetchTime: ent.lastFetchTime, 
-      status: ent.status, 
-      duration: ent.duration, 
-      isActive: ent.isActive,
-      id: ent.id,
-    };
-  }
-
-  async run(jobName: string) {
-    if (!this.schedulerRegistry.doesExist('cron', jobName)) {
-      throw new NotFoundException(`No cron job "${jobName}"`);
-    }
-    await this.dispatch(jobName);
-    return { status: true, message: `Job "${jobName}" started` };
   }
 }

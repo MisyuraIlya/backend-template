@@ -14,6 +14,9 @@ export class Cron {
     @Column()
     cronTime: string;
 
+    @Column({ type: 'int', default: 0 })
+    order: number;
+
     @Column({ type: 'timestamp', nullable: true })
     lastFetchTime?: Date;
 

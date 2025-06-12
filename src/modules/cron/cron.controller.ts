@@ -32,7 +32,7 @@ export class CronController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCronDto,
   ) {
-    return this.cronService.update(id, dto);
+    return this.cronService.update(id, dto as any);
   }
 
   @Get()
