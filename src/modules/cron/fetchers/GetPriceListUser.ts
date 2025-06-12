@@ -125,6 +125,7 @@ export class GetPriceListUserService {
         "Cron job: ERP price-list user sync failed",
         (error as Error).stack
       );
+      throw error;
     } finally {
       this.isSyncing = false;
     }

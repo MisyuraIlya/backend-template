@@ -84,6 +84,7 @@ export class GetAttributesMainService {
       this.logger.log('Cron job: ERP attribute main sync completed successfully');
     } catch (error) {
       this.logger.error('Cron job: ERP attribute main sync failed', (error as Error).stack);
+      throw error;
     } finally {
       this.isSyncing = false;
     }

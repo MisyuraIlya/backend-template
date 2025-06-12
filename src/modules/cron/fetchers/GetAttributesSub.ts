@@ -104,6 +104,7 @@ export class GetAttributesSubService {
       this.logger.log('Cron job: ERP attribute sub sync completed successfully');
     } catch (error) {
       this.logger.error('Cron job: ERP attribute sub sync failed', (error as Error).stack);
+      throw error;
     } finally {
       this.isSyncing = false;
     }

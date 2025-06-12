@@ -107,6 +107,7 @@ export class GetAttributeProducts {
       this.logger.log('Cron job: ERP attribute-products sync completed successfully');
     } catch (error) {
       this.logger.error('Cron job: ERP attribute-products sync failed', (error as Error).stack);
+      throw error;
     } finally {
       this.isSyncing = false;
     }

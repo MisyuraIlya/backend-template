@@ -86,6 +86,7 @@ export class GetAgentService {
         durationMs,
         stack: (err as Error).stack,
       });
+      throw err;
     } finally {
       this.isSyncing = false;
     }

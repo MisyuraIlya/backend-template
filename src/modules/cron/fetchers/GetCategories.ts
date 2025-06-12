@@ -65,6 +65,7 @@ export class GetCategoriesService {
         'Cron job: ERP categories sync failed',
         (error as Error).stack,
       );
+      throw error;
     } finally {
       this.isSyncing = false;
     }

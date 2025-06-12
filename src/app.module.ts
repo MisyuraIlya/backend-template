@@ -70,6 +70,7 @@ import { PushSubscription } from './modules/push-subscription/entities/push-subs
 import { ProductPackage } from './modules/product-package/entities/product.entity';
 import { ProductPackageModule } from './modules/product-package/product-package.module';
 import { Cron } from './modules/cron/entities/cron.entity';
+import { CronSettings } from './modules/cron/entities/cron-settings.entity';
 
 @Module({
   imports: [
@@ -121,7 +122,8 @@ import { Cron } from './modules/cron/entities/cron.entity';
           AgentTarget,
           PushSubscription,
           ProductPackage,
-          Cron
+          Cron,
+          CronSettings
         ],
         synchronize: true,
       }),

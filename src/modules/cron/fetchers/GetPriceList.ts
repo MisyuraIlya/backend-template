@@ -72,6 +72,7 @@ export class GetPriceListsService {
         'Cron job: ERP price lists sync failed',
         (error as Error).stack,
       );
+      throw error;
     } finally {
       this.isSyncing = false;
     }

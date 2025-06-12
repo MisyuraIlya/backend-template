@@ -11,21 +11,22 @@ export class Cron {
     @Column()
     label: string;
 
-    @Column()
-    cronTime: string;
-
     @Column({ type: 'int', default: 0 })
     order: number;
 
     @Column({ type: 'timestamp', nullable: true })
     lastFetchTime?: Date;
 
-    @Column({ type: 'boolean', default: true })
-    isActive: boolean;
-
+    /** true = the last run FAILED */
     @Column({ type: 'boolean', default: false })
     status: boolean;
 
     @Column({ type: 'int', nullable: true })
     duration?: number;
+
+    @Column({ type: 'text', nullable: true })
+    error: string | null;
+
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
 }

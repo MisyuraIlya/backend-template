@@ -68,6 +68,7 @@ export class GetVarietiesService {
         'Cron job: ERP varieties sync failed',
         (error as Error).stack,
       );
+      throw error;
     } finally {
       this.isSyncing = false;
     }

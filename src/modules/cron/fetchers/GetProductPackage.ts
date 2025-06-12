@@ -44,6 +44,7 @@ export class GetProductPackagesService {
         'Cron job: ERP products sync failed',
         (error as Error).stack,
       );
+      throw error;
     } finally {
       this.isSyncing = false;
     }
