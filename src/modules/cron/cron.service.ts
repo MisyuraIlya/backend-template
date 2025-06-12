@@ -156,7 +156,6 @@ export class CronService implements OnModuleInit {
     );
     this.schedulerRegistry.addCronJob(name, job);
     job.start();
-    this.logger.log(`Scheduled MainCron @ ${cronTime}`);
   }
 
   private unscheduleMainCron() {
@@ -167,6 +166,11 @@ export class CronService implements OnModuleInit {
       this.logger.log('Unscheduled MainCron');
     }
   }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
 
   private async executeCrons() {
     if (this.manualExecution) {
@@ -179,7 +183,8 @@ export class CronService implements OnModuleInit {
       order: { order: 'ASC' },
     });
 
-    for (const cron of crons) {
+    for (let i = 0; i < crons.length; i++) {
+      const cron = crons[i];
       const handler = this.handlers[cron.jobName];
       if (handler.isSyncing) {
         this.logger.warn(`"${cron.jobName}" already running; skip`);
@@ -195,14 +200,17 @@ export class CronService implements OnModuleInit {
       } catch (err) {
         cron.status = true;
         cron.error = (err as Error).stack || (err as Error).message;
-        this.logger.error(
-          `Error in "${cron.jobName}": ${cron.error}`,
-        );
+        this.logger.error(`Error in "${cron.jobName}": ${cron.error}`);
       } finally {
         handler.isSyncing = false;
         cron.lastFetchTime = new Date();
         cron.duration = Date.now() - start;
         await this.cronRepo.save(cron);
+      }
+
+      if (i < crons.length - 1) {
+        this.logger.log(`Waiting 5 minutes before next cron…`);
+        await this.sleep(5 * 60 * 1000);
       }
     }
   }
@@ -245,6 +253,20 @@ export class CronService implements OnModuleInit {
     }
   }
 
+  public async runAllCrons(): Promise<{ status: boolean; message: string }> {
+    if (this.manualExecution) {
+      return { status: false, message: 'Manual run already in progress.' };
+    }
+    this.manualExecution = true;
+    try {
+      await this.executeCrons();
+      return { status: true, message: 'All crons executed successfully.' };
+    } catch (err) {
+      return { status: false, message: (err as Error).message };
+    } finally {
+      this.manualExecution = false;
+    }
+  }
 
   async create(dto: { jobName: string; label: string, isActive?: boolean }) {
     const ent = this.cronRepo.create({ jobName: dto.jobName, label: dto.label, isActive: dto.isActive ?? true, status: false });

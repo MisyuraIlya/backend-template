@@ -58,7 +58,7 @@ export class GetAgentService {
   public async handleCron(): Promise<void> {
     if (this.isSyncing) {
       this.logger.log({
-        context: 'CRON_AGENTS',
+        context: GetAgentService.name,
         level: 'info',
         message: 'Previous sync still running — skipping this tick',
         CRON_SUCCEEDED: false,
@@ -71,17 +71,17 @@ export class GetAgentService {
       await this.sync();
       const durationMs = Date.now() - start;
       this.logger.log({
-        context: 'CRON_AGENTS',
+        context: GetAgentService.name,
         level: 'info',
-        message: 'Cron job: ERP agent sync completed successfully',
+        message: `Cron job: ERP agent sync completed successfully in ${durationMs}ms`,
         CRON_SUCCEEDED: true,
         durationMs,
       });
     } catch (err) {
       const durationMs = Date.now() - start;
       this.logger.error({
-        context: 'CRON_AGENTS',
-        message: 'Cron job: ERP agent sync failed',
+        context: GetAgentService.name,
+        message: `Cron job: ERP agent sync failed after ${durationMs}ms`,
         CRON_SUCCEEDED: false,
         durationMs,
         stack: (err as Error).stack,

@@ -51,24 +51,37 @@ export class GetVarietiesService {
 
   }
 
-//   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
-  public async handleCron() {
+  public async handleCron(): Promise<void> {
     if (this.isSyncing) {
-      this.logger.log('Previous sync still running — skipping this tick');
+      this.logger.log({
+        context: GetVarietiesService.name,
+        level: 'info',
+        message: 'Previous sync still running — skipping this tick',
+      });
       return;
     }
     this.isSyncing = true;
-    this.logger.log('Cron job: starting ERP varieties sync');
-
+    const start = Date.now();
     try {
       await this.sync();
-      this.logger.log('Cron job: ERP varieties sync completed successfully');
-    } catch (error) {
-      this.logger.error(
-        'Cron job: ERP varieties sync failed',
-        (error as Error).stack,
-      );
-      throw error;
+      const durationMs = Date.now() - start;
+      this.logger.log({
+        context: GetVarietiesService.name,
+        level: 'info',
+        message: 'Cron job: ERP varieties sync completed successfully',
+        CRON_SUCCEEDED: true,
+        durationMs,
+      });
+    } catch (err) {
+      const durationMs = Date.now() - start;
+      this.logger.error({
+        context: GetVarietiesService.name,
+        message: 'Cron job: ERP varieties sync failed',
+        CRON_SUCCEEDED: false,
+        durationMs,
+        stack: (err as Error).stack,
+      });
+      throw err;
     } finally {
       this.isSyncing = false;
     }

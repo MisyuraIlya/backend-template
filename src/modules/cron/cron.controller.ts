@@ -66,4 +66,13 @@ export class CronController {
       throw new BadRequestException(err.message);
     }
   }
+
+  @Post('allCrons')
+  async allCrons(): Promise<{ status: boolean; message: string }> {
+    try {
+      return await this.cronService.runAllCrons();
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
+  }
 }

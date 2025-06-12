@@ -106,26 +106,38 @@ export class GetPriceListUserService {
     }
   }
 
-//   @Cron(CronExpression.EVERY_MINUTE, { timeZone: "Asia/Jerusalem" })
-  public async handleCron() {
+  public async handleCron(): Promise<void> {
     if (this.isSyncing) {
-      this.logger.log("Previous sync still running — skipping this tick");
+      this.logger.log({
+        context: GetPriceListUserService.name,
+        level: 'info',
+        message: 'Previous sync still running — skipping this tick',
+        CRON_SUCCEEDED: false,
+      });
       return;
     }
     this.isSyncing = true;
-    this.logger.log("Cron job: starting ERP price-list user sync");
-
+    const start = Date.now();
     try {
       await this.sync();
-      this.logger.log(
-        "Cron job: ERP price-list user sync completed successfully"
-      );
-    } catch (error) {
-      this.logger.error(
-        "Cron job: ERP price-list user sync failed",
-        (error as Error).stack
-      );
-      throw error;
+      const durationMs = Date.now() - start;
+      this.logger.log({
+        context: GetPriceListUserService.name,
+        level: 'info',
+        message: `Cron job: ERP price-list user sync completed successfully in ${durationMs}ms`,
+        CRON_SUCCEEDED: true,
+        durationMs,
+      });
+    } catch (err) {
+      const durationMs = Date.now() - start;
+      this.logger.error({
+        context: GetPriceListUserService.name,
+        message: `Cron job: ERP price-list user sync failed after ${durationMs}ms`,
+        CRON_SUCCEEDED: false,
+        durationMs,
+        stack: (err as Error).stack,
+      });
+      throw err;
     } finally {
       this.isSyncing = false;
     }

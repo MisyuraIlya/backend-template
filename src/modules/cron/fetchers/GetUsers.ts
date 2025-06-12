@@ -90,20 +90,35 @@ export class GetUsersService {
 
   public async handleCron(): Promise<void> {
     if (this.isSyncing) {
-      this.logger.log('Previous sync still running — skipping this tick');
+      this.logger.log({
+        context: GetUsersService.name,
+        level: 'info',
+        message: 'Previous sync still running — skipping this tick',
+      });
       return;
     }
     this.isSyncing = true;
-
-    this.logger.log('Cron job: starting ERP user sync');
+    const start = Date.now();
     try {
       await this.syncAllUsers();
-      this.logger.log('Cron job: ERP user sync completed successfully');
-    } catch (error) {
-      this.logger.error(
-        'Cron job: ERP user sync failed',
-        (error as Error).stack,
-      );
+      const durationMs = Date.now() - start;
+      this.logger.log({
+        context: GetUsersService.name,
+        level: 'info',
+        message: 'Cron job: ERP users sync completed successfully',
+        CRON_SUCCEEDED: true,
+        durationMs,
+      });
+    } catch (err) {
+      const durationMs = Date.now() - start;
+      this.logger.error({
+        context: GetUsersService.name,
+        message: 'Cron job: ERP users sync failed',
+        CRON_SUCCEEDED: false,
+        durationMs,
+        stack: (err as Error).stack,
+      });
+      throw err;
     } finally {
       this.isSyncing = false;
     }

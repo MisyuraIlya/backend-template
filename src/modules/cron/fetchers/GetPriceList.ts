@@ -55,24 +55,38 @@ export class GetPriceListsService {
     }
   }
 
-//   @Cron(CronExpression.EVERY_MINUTE, { timeZone: 'Asia/Jerusalem' })
-  public async handleCron() {
+  public async handleCron(): Promise<void> {
     if (this.isSyncing) {
-      this.logger.log('Previous sync still running — skipping this tick');
+      this.logger.log({
+        context: GetPriceListsService.name,
+        level: 'info',
+        message: 'Previous sync still running — skipping this tick',
+        CRON_SUCCEEDED: false,
+      });
       return;
     }
     this.isSyncing = true;
-    this.logger.log('Cron job: starting ERP price lists sync');
-
+    const start = Date.now();
     try {
       await this.sync();
-      this.logger.log('Cron job: ERP price lists sync completed successfully');
-    } catch (error) {
-      this.logger.error(
-        'Cron job: ERP price lists sync failed',
-        (error as Error).stack,
-      );
-      throw error;
+      const durationMs = Date.now() - start;
+      this.logger.log({
+        context: GetPriceListsService.name,
+        level: 'info',
+        message: `Cron job: ERP price lists sync completed successfully in ${durationMs}ms`,
+        CRON_SUCCEEDED: true,
+        durationMs,
+      });
+    } catch (err) {
+      const durationMs = Date.now() - start;
+      this.logger.error({
+        context: GetPriceListsService.name,
+        message: `Cron job: ERP price lists sync failed after ${durationMs}ms`,
+        CRON_SUCCEEDED: false,
+        durationMs,
+        stack: (err as Error).stack,
+      });
+      throw err;
     } finally {
       this.isSyncing = false;
     }

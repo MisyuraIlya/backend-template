@@ -17,7 +17,6 @@ export class Cron {
     @Column({ type: 'timestamp', nullable: true })
     lastFetchTime?: Date;
 
-    /** true = the last run FAILED */
     @Column({ type: 'boolean', default: false })
     status: boolean;
 
@@ -29,4 +28,7 @@ export class Cron {
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
+
+    @Column({ type: 'boolean', default: true })
+    isPublished: boolean;
 }
