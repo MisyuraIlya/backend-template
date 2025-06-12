@@ -26,7 +26,7 @@ import { GetVarietiesService } from './fetchers/GetVarieties';
 @Injectable()
 export class CronService implements OnModuleInit {
   private readonly logger = new Logger(CronService.name);
-  private readonly handlers: Record<
+  private handlers: Record<
     string,
     { isSyncing: boolean; handleCron(): Promise<void> }
   > = {};
@@ -47,22 +47,24 @@ export class CronService implements OnModuleInit {
     private readonly getProductsSvc: GetProductsService,
     private readonly getUsersSvc: GetUsersService,
     private readonly getVarietiesSvc: GetVarietiesService,
-  ) {
-    this.handlers['AGENTS_SYNC'] = this.getAgentSvc;
-    this.handlers['ATTRIBUTE_PRODUCTS_SYNC'] = this.getAttributeProductsSvc;
-    this.handlers['ATTRIBUTES_MAIN_SYNC'] = this.getAttributesMainSvc;
-    this.handlers['ATTRIBUTES_SUB_SYNC'] = this.getAttributesSubSvc;
-    this.handlers['CATEGORIES_SYNC'] = this.getCategoriesSvc;
-    this.handlers['PRICE_LISTS_SYNC'] = this.getPriceListsSvc;
-    this.handlers['PRICE_LIST_DETAILED_SYNC'] = this.getPriceListDetailedSvc;
-    this.handlers['PRICE_LIST_USER_SYNC'] = this.getPriceListUserSvc;
-    this.handlers['PRODUCT_PACKAGES_SYNC'] = this.getProductPackagesSvc;
-    this.handlers['PRODUCTS_SYNC'] = this.getProductsSvc;
-    this.handlers['USERS_SYNC'] = this.getUsersSvc;
-    this.handlers['VARIETIES_SYNC'] = this.getVarietiesSvc;
-  }
+  ) {}
 
   async onModuleInit() {
+    this.handlers = {
+      AGENTS_SYNC: { isSyncing: false, handleCron: this.getAgentSvc.handleCron.bind(this.getAgentSvc) },
+      ATTRIBUTE_PRODUCTS_SYNC: { isSyncing: false, handleCron: this.getAttributeProductsSvc.handleCron.bind(this.getAttributeProductsSvc) },
+      ATTRIBUTES_MAIN_SYNC: { isSyncing: false, handleCron: this.getAttributesMainSvc.handleCron.bind(this.getAttributesMainSvc) },
+      ATTRIBUTES_SUB_SYNC: { isSyncing: false, handleCron: this.getAttributesSubSvc.handleCron.bind(this.getAttributesSubSvc) },
+      CATEGORIES_SYNC: { isSyncing: false, handleCron: this.getCategoriesSvc.handleCron.bind(this.getCategoriesSvc) },
+      PRICE_LISTS_SYNC: { isSyncing: false, handleCron: this.getPriceListsSvc.handleCron.bind(this.getPriceListsSvc) },
+      PRICE_LIST_DETAILED_SYNC: { isSyncing: false, handleCron: this.getPriceListDetailedSvc.handleCron.bind(this.getPriceListDetailedSvc) },
+      PRICE_LIST_USER_SYNC: { isSyncing: false, handleCron: this.getPriceListUserSvc.handleCron.bind(this.getPriceListUserSvc) },
+      PRODUCT_PACKAGES_SYNC: { isSyncing: false, handleCron: this.getProductPackagesSvc.handleCron.bind(this.getProductPackagesSvc) },
+      PRODUCTS_SYNC: { isSyncing: false, handleCron: this.getProductsSvc.handleCron.bind(this.getProductsSvc) },
+      USERS_SYNC: { isSyncing: false, handleCron: this.getUsersSvc.handleCron.bind(this.getUsersSvc) },
+      VARIETIES_SYNC: { isSyncing: false, handleCron: this.getVarietiesSvc.handleCron.bind(this.getVarietiesSvc) },
+    };
+
     const all = await this.cronRepo.find();
     for (const cfg of all) {
       if (cfg.isActive) {
@@ -87,48 +89,58 @@ export class CronService implements OnModuleInit {
     const cfg = await this.cronRepo.findOneBy({ jobName });
     if (!cfg || !cfg.isActive) return;
 
+    if (this.handlers[jobName].isSyncing) {
+      this.logger.warn(`Cron job "${jobName}" is already running. Skipping.`);
+      return;
+    }
+
+    this.handlers[jobName].isSyncing = true;
     const start = Date.now();
     try {
       this.logger.debug(`Running cron "${jobName}"`);
-      switch (jobName) {
-        case 'AGENTS_SYNC':
-          await this.getAgentSvc.handleCron();
-          break;
-        case 'ATTRIBUTE_PRODUCTS_SYNC':
-          await this.getAttributeProductsSvc.handleCron();
-          break;
-        case 'ATTRIBUTES_MAIN_SYNC':
-          await this.getAttributesMainSvc.handleCron();
-          break;
-        case 'ATTRIBUTES_SUB_SYNC':
-          await this.getAttributesSubSvc.handleCron();
-          break;
-        case 'CATEGORIES_SYNC':
-          await this.getCategoriesSvc.handleCron();
-          break;
-        case 'PRICE_LISTS_SYNC':
-          await this.getPriceListsSvc.handleCron();
-          break;
-        case 'PRICE_LIST_DETAILED_SYNC':
-          await this.getPriceListDetailedSvc.handleCron();
-          break;
-        case 'PRICE_LIST_USER_SYNC':
-          await this.getPriceListUserSvc.handleCron();
-          break;
-        case 'PRODUCT_PACKAGES_SYNC':
-          await this.getProductPackagesSvc.handleCron();
-          break;
-        case 'PRODUCTS_SYNC':
-          await this.getProductsSvc.handleCron();
-          break;
-        case 'USERS_SYNC':
-          await this.getUsersSvc.handleCron();
-          break;
-        case 'VARIETIES_SYNC':
-          await this.getVarietiesSvc.handleCron();
-          break;
-        default:
-          this.logger.warn(`No handler for "${jobName}"`);
+      try {
+        switch (jobName) {
+          case 'AGENTS_SYNC':
+            await this.getAgentSvc.handleCron();
+            break;
+          case 'ATTRIBUTE_PRODUCTS_SYNC':
+            await this.getAttributeProductsSvc.handleCron();
+            break;
+          case 'ATTRIBUTES_MAIN_SYNC':
+            await this.getAttributesMainSvc.handleCron();
+            break;
+          case 'ATTRIBUTES_SUB_SYNC':
+            await this.getAttributesSubSvc.handleCron();
+            break;
+          case 'CATEGORIES_SYNC':
+            await this.getCategoriesSvc.handleCron();
+            break;
+          case 'PRICE_LISTS_SYNC':
+            await this.getPriceListsSvc.handleCron();
+            break;
+          case 'PRICE_LIST_DETAILED_SYNC':
+            await this.getPriceListDetailedSvc.handleCron();
+            break;
+          case 'PRICE_LIST_USER_SYNC':
+            await this.getPriceListUserSvc.handleCron();
+            break;
+          case 'PRODUCT_PACKAGES_SYNC':
+            await this.getProductPackagesSvc.handleCron();
+            break;
+          case 'PRODUCTS_SYNC':
+            await this.getProductsSvc.handleCron();
+            break;
+          case 'USERS_SYNC':
+            await this.getUsersSvc.handleCron();
+            break;
+          case 'VARIETIES_SYNC':
+            await this.getVarietiesSvc.handleCron();
+            break;
+          default:
+            this.logger.warn(`No handler for "${jobName}"`);
+        }
+      } catch (error) {
+        this.logger.error(`Error in cron job "${jobName}": ${(error as Error).message}`, (error as Error).stack);
       }
       cfg.lastFetchTime = new Date();
       cfg.status = false;
@@ -137,6 +149,7 @@ export class CronService implements OnModuleInit {
       cfg.status = true;
       this.logger.error(`Error in "${jobName}": ${(err as Error).message}`, (err as Error).stack);
     } finally {
+      this.handlers[jobName].isSyncing = false;
       cfg.duration = Date.now() - start;
       await this.cronRepo.save(cfg);
     }

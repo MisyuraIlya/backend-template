@@ -35,7 +35,6 @@ export class AppController {
   @Get('healthcheck')
   @Public()
   healthCheck(): { status: string } {
-    this.logger.log('Health check OK', AppController.name);
     return { status: 'ok' };
   }
 }

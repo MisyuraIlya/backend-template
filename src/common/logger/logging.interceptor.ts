@@ -22,7 +22,11 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<any> {
     const req = ctx.switchToHttp().getRequest<Request>();
     
-    if (req.url === '/metrics' || req.url.startsWith('/metrics/')) {
+    if (
+      req.url === '/metrics' ||
+      req.url.startsWith('/metrics/') ||
+      req.url === '/api/healthcheck'
+    ) {
       return next.handle();
     }
 
